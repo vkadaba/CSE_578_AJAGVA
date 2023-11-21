@@ -4,7 +4,7 @@ const height = 800;
 const innerWidth = width - margin.left - margin.right;
 const innerHeight = height - margin.top - margin.bottom;
 var gps_data, car_assignments, cc_data, loyalty_data, abila;
-var tooltip, projection, map_path;
+var tooltip, projection, map_path, selected_vehicle;
 
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -17,25 +17,24 @@ document.addEventListener('DOMContentLoaded', function () {
     ];
 
     Promise.all(import_files).then(function (values) {
+        
+        gps_data = values[0];
+        car_assignments = values[1];
+        cc_data = values[2];
+        loyalty_data = values[3];
+        abila = values[4];
+
+        dataWrangle();
 
         console.log("GPS data loaded.")
-        gps_data = values[0];
         console.log(gps_data);
-
         console.log("Car Assignments loaded.");
-        car_assignments = values[1];
         console.log(car_assignments);
-
         console.log("Credit Card data loaded.");
-        cc_data = values[2];
         console.log(cc_data);
-
         console.log("Loyalty Card data loaded.");
-        loyalty_data = values[3];
         console.log(loyalty_data);
-
         console.log('Abila.geojson loaded')
-        abila = values[4];
 
         // Create hidden tooltip div
         tooltip = d3.select("body").append("div")
@@ -45,7 +44,9 @@ document.addEventListener('DOMContentLoaded', function () {
         projection = d3.geoMercator().fitSize([innerWidth, innerHeight], abila);
         map_path = d3.geoPath().projection(projection);
 
+        
         drawMap();
+        selectVehicle();
     });
 });
 
@@ -84,4 +85,52 @@ function drawMap() {
             tooltip.style("display", "none")
                 .html();
         });
+};
+
+function selectVehicle() {
+    var vehicle_id = d3.select("#select-vehicle").node().value;
+    console.log(`Currently selected vehicle: ${vehicle_id}`)
+    selected_vehicle = [];
+
+};
+
+function dataWrangle() {
+    var timeParse = d3.timeParse('%m/%d/%Y %H:%M:%S')
+    temp = gps_data.map(d => ({
+        "timestamp": timeParse(d.Timestamp),
+        "id": +d.id,
+        "coords": [+d.lat, +d.long]
+    }));
+
+    gps_data = temp;
+
+    temp = car_assignments.map(d => ({
+        "CarID": +d.CarID,
+        "CurrentEmploymentTitle": d.CurrentEmploymentTitle,
+        "CurrentEmploymentType": d.CurrentEmploymentType,
+        "FirstName": d.FirstName,
+        "LastName": d.LastName
+    }));
+
+    car_assignments = temp;
+
+    timeParse = d3.timeParse('%m/%d/%Y %H:%M')
+    temp = cc_data.map(d => ({
+        "last4": +d.last4ccnum,
+        "location": d.location,
+        "price": +d.price,
+        "timestamp": timeParse(d.timestamp)
+    }));
+
+    cc_data = temp;
+
+    timeParse = d3.timeParse('%m/%d/%Y')
+    temp = loyalty_data.map(d => ({
+        "localtion": d.location,
+        "loyaltynum": d.loyaltynum,
+        "price": +d.price,
+        "timestamp": timeParse(d.timestamp)
+    }));
+
+    loyalty_data = temp;
 }
