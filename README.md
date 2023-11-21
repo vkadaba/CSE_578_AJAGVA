@@ -9,3 +9,6 @@ For MC2, we are tasked with aiding law enforcement from both Kronos and Tethys i
 3. Infer the owners of each credit card and loyalty card with supporting evidence. Identify uncertainties in both the data as well as inference methodology.
 4. Determine informal or unofficial relationships between GAStech employees and provide supporting evidence.
 5. Conclude the analysis and provide evidence of any suspicious activity. Additionally, identify 1-10 locations where this activity is occurring.
+
+## Vehicle GPS data is not included in this repo.
+Locally add the gps.csv file into the 'data' directory!
