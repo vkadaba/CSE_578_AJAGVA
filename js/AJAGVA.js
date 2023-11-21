@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', function () {
         projection = d3.geoMercator().fitSize([innerWidth, innerHeight], abila);
         map_path = d3.geoPath().projection(projection);
 
-        
         drawMap();
         selectVehicle();
     });
@@ -87,18 +86,28 @@ function drawMap() {
         });
 };
 
+// Gets vehicle selected from dropdown and creates subset list of all
+// GPS coordinates for the vehicle
 function selectVehicle() {
     var vehicle_id = d3.select("#select-vehicle").node().value;
     console.log(`Currently selected vehicle: ${vehicle_id}`)
     selected_vehicle = [];
 
+    gps_data.forEach(d => {
+        if (d.CarID == vehicle_id){
+            selected_vehicle.push(d);
+        }
+    });
+
+    console.log(selected_vehicle);
 };
 
 function dataWrangle() {
     var timeParse = d3.timeParse('%m/%d/%Y %H:%M:%S')
     temp = gps_data.map(d => ({
         "timestamp": timeParse(d.Timestamp),
-        "id": +d.id,
+        "CarID": +d.id,
+        // Coordinate structure [lat, long]
         "coords": [+d.lat, +d.long]
     }));
 
