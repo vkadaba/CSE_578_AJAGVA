@@ -28,11 +28,24 @@
             <svg id="map_svg"></svg>
         </div>
         <div class="row">
-            <div class="col text-center" id="vehicle_select">
-                Select a Vehicle ID:
-                <br>
-                <select name="vehicle_id" id="select-vehicle" onchange="selectVehicle();">
-                    <option value="0">0</option>
+            <div class="row">
+                <div class="col text-center">
+                    Select Time Range<br>
+                    <select name="range_start_day" id="range-start-day">
+                    </select>
+                    <select name="range_start_hours" id="range-start-hours">
+                    </select><br/>
+                    to<br/>
+                    <select name="range_end_day" id="range-end-day">
+                    </select>
+                    <select name="range_end_hours" id="range-end-hours">
+                    </select><br/><br/>
+                    <button type="button" class="btn btn-primary" onclick="updateRange();">Update Range</button>
+                </div>
+                <div class="col text-center" id="vehicle_select">
+                    Select a Vehicle ID:
+                    <select name="vehicle_id" id="select-vehicle" onchange="selectVehicle();">
+                        <option value="0">0</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
                     <option value="3">3</option>
@@ -68,7 +81,8 @@
                     <option value="33">33</option>
                     <option value="34">34</option>
                     <option value="35">35</option>
-                </select>
+                    </select>
+                </div>
             </div>
         </div>
     </div>  
