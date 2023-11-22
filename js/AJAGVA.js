@@ -95,9 +95,10 @@ function drawRoadMap(option) {
 };
 
 function plotPath(option) {
-    // var extent = d3.extent(selected_vehicle, d => {return d.timestamp});
-    var size = [0, selected_vehicle.length];
-    const color = d3.scaleSequential(size, d3.interpolateViridis);
+    var extent = d3.extent(selected_vehicle, d => {return d.timestamp});
+    const color = d3.scaleSequential(extent, d3.interpolateViridis);
+    const size = d3.scaleSqrt().domain(extent).range([3, 1]);
+    const opacity = d3.scaleSqrt().domain(extent).range([0.25, 1]);
     
     if (option === undefined) {
         var vehicle_group = map_svg.append('g')
@@ -111,9 +112,14 @@ function plotPath(option) {
                 .attr("transform", d => {
                     return `translate(${projection(d.coords)})`
                 })
-                .attr('r', 3)
-                .attr('fill', (d,i) => {
-                    return color(i);
+                .attr('r', d => {
+                    return size(d.timestamp);
+                })
+                .attr('fill', d => {
+                    return color(d.timestamp);
+                })
+                .style('opacity', d => {
+                    return opacity(d.timestamp);
                 });
     }
     else if(option === "remove") {
