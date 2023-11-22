@@ -1,8 +1,9 @@
-const margin = {left: 10, right: 10, top: 10, bottom: 10};
-const width = 1000;
-const height = 800;
+const margin = {left: 20, right: 20, top: 20, bottom: 20};
+const width = 1300;
+const height = 1000;
 const innerWidth = width - margin.left - margin.right;
 const innerHeight = height - margin.top - margin.bottom;
+const stroke_color = 'gray';
 var gps_data, car_assignments, cc_data, loyalty_data, abila;
 var tooltip, projection, map_path, selected_vehicle, selected_range;
 var range_start, range_end;
@@ -50,27 +51,38 @@ document.addEventListener('DOMContentLoaded', function () {
         map_path = d3.geoPath().projection(projection);
 
         map_svg = d3.select('#map_svg')
+            .attr('class', 'map_svg')
             .attr('width', width)
             .attr('height', height);
         
-        drawRoadMap();
         selectVehicle();
+        updateMap();
+
+        initZoom();
+        
     });
 });
 
-function drawRoadMap(option) {
+function updateMap(option) {
+var extent = d3.extent(selected_vehicle, d => {return d.timestamp});
+const color = d3.scaleSequential(extent, d3.interpolatePlasma);
+const size = d3.scaleSqrt().domain(extent).range([1.5, 0.5]);
+const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
+
+    map_svg.selectAll('.road_group').remove();
+
     var road_group = map_svg.append('g')
         .attr('class', 'road_group')
         .attr('transform', `translate(${margin.left}, 0)`);
 
     road_group.selectAll('.road_path')
         .data(abila.features)
-        .enter().append('path')
+        .join('path')
             .attr('class', 'road_path')
             .attr('d', map_path)
             .style('fill', 'none')
-            .style('stroke', 'black')
-            .style('stroke-width', '3px')
+            .style('stroke', stroke_color)
+            .style('stroke-width', '4px')
         .on("mouseenter", function(d, i) {
             tooltip.style("display", "initial");
         })
@@ -87,31 +99,25 @@ function drawRoadMap(option) {
         })
         .on("mouseleave", function(d) {
 
-            d3.select(this).style('stroke', 'black');
+            d3.select(this).style('stroke', stroke_color);
 
             tooltip.style("display", "none")
                 .html();
         });
-};
 
-function plotPath(option) {
-    var extent = d3.extent(selected_vehicle, d => {return d.timestamp});
-    const color = d3.scaleSequential(extent, d3.interpolateViridis);
-    const size = d3.scaleSqrt().domain(extent).range([3, 1]);
-    const opacity = d3.scaleSqrt().domain(extent).range([0.25, 1]);
-    
-    if (option === undefined) {
+    if (option === 'draw-gps') {
         var vehicle_group = map_svg.append('g')
             .attr('class', 'vehicle_group')
             .attr('transform', `translate(${margin.left}, 0)`);
 
         vehicle_group.selectAll('.vehicle_mark')
             .data(selected_vehicle)
-            .enter().append('circle')
+            .join('circle')
                 .attr('class', 'vehicle_mark')
                 .attr("transform", d => {
                     return `translate(${projection(d.coords)})`
                 })
+                // .attr('r', 2)
                 .attr('r', d => {
                     return size(d.timestamp);
                 })
@@ -122,9 +128,13 @@ function plotPath(option) {
                     return opacity(d.timestamp);
                 });
     }
-    else if(option === "remove") {
+    else if(option === "remove-gps") {
         map_svg.selectAll('.vehicle_group').remove();
     }
+};
+
+function plotPath(option) {
+    
 }
 
 // Gets vehicle selected from dropdown and creates subset list of all
@@ -309,4 +319,34 @@ function populateOptions() {
     var end_day = +d3.select('#range-end-day').node().value;
     var end_hour = +d3.select("#range-end-hours").node().value;
     range_end = end_day + end_hour;
+}
+
+let zoom = d3.zoom()
+    .scaleExtent([1, 20])
+    .translateExtent([[-20,-20], [width + 20, height + 20]])
+    .on('zoom', handleZoom);
+
+function handleZoom(e) {
+    d3.select('.road_group')
+        .attr('transform', e.transform);
+
+    d3.select('.vehicle_group')
+        .attr('transform', e.transform);
+}
+
+function initZoom() {
+    d3.select('.map_svg')
+        .call(zoom);
+}
+
+function resetZoom() {
+    d3.select('.map_svg')
+        .transition()
+        .call(zoom.scaleTo, 1);
+}
+
+function centerMap() {
+    d3.select('.map_svg')
+        .transition()
+        .call(zoom.translateTo, 0.5 * innerWidth, 0.5 * innerHeight);
 }

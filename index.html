@@ -6,7 +6,7 @@
 
 <style>
     svg{
-        background-color: darkgray;
+        background-color: rgb(70,70,70);
     }
     .myTooltip {
                 color: black;
@@ -24,31 +24,41 @@
 </style>
 <body>
     <div class="container">
+        <div class="row">
+            <div class="col text-center">
+                <br>
+            </div>
+        </div>
         <div class="col text-center">
             <svg id="map_svg"></svg>
         </div>
         <div class="row">
-            <div class="row">
-                <div class="col text-center">
-                    Select Time Range<br>
-                    <select name="range_start_day" id="range-start-day">
-                    </select>
-                    <select name="range_start_hours" id="range-start-hours">
-                    </select><br/>
-                    to<br/>
-                    <select name="range_end_day" id="range-end-day">
-                    </select>
-                    <select name="range_end_hours" id="range-end-hours">
-                    </select><br/><br/>
-                    <button type="button" class="btn btn-primary" onclick="updateRange();">Update Range</button>
-                </div>
-                <div class="col text-center" id="vehicle_select">
-                    Select a Vehicle ID:<br/>
-                    <select name="vehicle_id" id="select-vehicle" onchange="selectVehicle();">
-                    </select> <br/><br/>
-                    <button type="button" class="btn btn-primary" onclick="plotPath();">Plot Path</button>
-                    <button type="button" class="btn btn-warning" onclick="plotPath('remove');">Remove Path</button>
-                </div>
+            <div class="col text-center border border-2 p-2 mt-2 rounded">
+                Map Tools<br/>
+                <button type="button" class="btn btn-secondary" onclick="resetZoom();">Reset Zoom</button>
+                <button type="button" class="btn btn-secondary" onclick="centerMap();">Center Map</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                Select Time Range<br>
+                <select name="range_start_day" id="range-start-day">
+                </select>
+                <select name="range_start_hours" id="range-start-hours">
+                </select><br/>
+                to<br/>
+                <select name="range_end_day" id="range-end-day">
+                </select>
+                <select name="range_end_hours" id="range-end-hours">
+                </select><br/><br/>
+                <button type="button" class="btn btn-primary" onclick="updateRange();">Update Range</button>
+            </div>
+            <div class="col text-center" id="vehicle_select">
+                Select a Vehicle ID:<br/>
+                <select name="vehicle_id" id="select-vehicle" onchange="selectVehicle();">
+                </select> <br/><br/>
+                <button type="button" class="btn btn-primary" onclick="updateMap('draw-gps');">Plot Path</button>
+                <button type="button" class="btn btn-warning" onclick="updateMap('remove-gps');">Remove Path</button>
             </div>
         </div>
     </div>  
