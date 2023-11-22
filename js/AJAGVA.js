@@ -3,11 +3,14 @@ const width = 1000;
 const height = 800;
 const innerWidth = width - margin.left - margin.right;
 const innerHeight = height - margin.top - margin.bottom;
-const utcFormat = d3.utcFormat("%m/%d/%Y %H:%M:%S")
 var gps_data, car_assignments, cc_data, loyalty_data, abila;
 var tooltip, projection, map_path, selected_vehicle, selected_range;
 var range_start, range_end;
-
+var map_svg, road_group;
+// Use this formatter to convert from UTC to a human readable format
+// Ex: var converted = formatter(1388966400000);
+// console.log(converted) --> "01/06/2014 00:00:00"
+const formatter = d3.utcFormat("%m/%d/%Y %H:%M:%S");
 
 document.addEventListener('DOMContentLoaded', function () {
     const import_files = [
@@ -19,7 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
     ];
 
     Promise.all(import_files).then(function (values) {
-        populateRangeSelects();
+        populateOptions();
         gps_data = values[0];
         car_assignments = values[1];
         cc_data = values[2];
@@ -46,23 +49,24 @@ document.addEventListener('DOMContentLoaded', function () {
         projection = d3.geoMercator().fitSize([innerWidth, innerHeight], abila);
         map_path = d3.geoPath().projection(projection);
 
-       
+        map_svg = d3.select('#map_svg')
+            .attr('width', width)
+            .attr('height', height);
         
-        drawMap();
+        drawRoadMap();
         selectVehicle();
     });
 });
 
-function drawMap() {
-    svg = d3.select('#map_svg')
-        .attr('width', width)
-        .attr('height', height)
-        .append('g')
+function drawRoadMap(option) {
+    var road_group = map_svg.append('g')
+        .attr('class', 'road_group')
         .attr('transform', `translate(${margin.left}, 0)`);
-    
-    var map = svg.selectAll('path')
+
+    road_group.selectAll('.road_path')
         .data(abila.features)
         .enter().append('path')
+            .attr('class', 'road_path')
             .attr('d', map_path)
             .style('fill', 'none')
             .style('stroke', 'black')
@@ -90,16 +94,45 @@ function drawMap() {
         });
 };
 
+function plotPath(option) {
+    // var extent = d3.extent(selected_vehicle, d => {return d.timestamp});
+    var size = [0, selected_vehicle.length];
+    const color = d3.scaleSequential(size, d3.interpolateViridis);
+    
+    if (option === undefined) {
+        var vehicle_group = map_svg.append('g')
+            .attr('class', 'vehicle_group')
+            .attr('transform', `translate(${margin.left}, 0)`);
+
+        vehicle_group.selectAll('.vehicle_mark')
+            .data(selected_vehicle)
+            .enter().append('circle')
+                .attr('class', 'vehicle_mark')
+                .attr("transform", d => {
+                    return `translate(${projection(d.coords)})`
+                })
+                .attr('r', 3)
+                .attr('fill', (d,i) => {
+                    return color(i);
+                });
+    }
+    else if(option === "remove") {
+        map_svg.selectAll('.vehicle_group').remove();
+    }
+}
+
 // Gets vehicle selected from dropdown and creates subset list of all
 // GPS coordinates for the vehicle
 function selectVehicle() {
     var vehicle_id = d3.select("#select-vehicle").node().value;
-    console.log(`Currently selected vehicle: ${vehicle_id}`)
+    console.log(`Currently selected vehicle: ${vehicle_id}`);
     selected_vehicle = [];
 
     gps_data.forEach(d => {
         if (d.CarID == vehicle_id){
-            selected_vehicle.push(d);
+            if (range_start <= d.timestamp && d.timestamp <= range_end){
+                selected_vehicle.push(d);
+            }
         }
     });
 
@@ -111,8 +144,8 @@ function dataWrangle() {
     temp = gps_data.map(d => ({
         "timestamp": utcParse(d.Timestamp).getTime(),
         "CarID": +d.id,
-        // Coordinate structure [lat, long]
-        "coords": [+d.lat, +d.long]
+        // Coordinate structure [long, lat] because d3 is weird
+        "coords": [+d.long, +d.lat]
     }));
 
     gps_data = temp;
@@ -155,15 +188,17 @@ function updateRange() {
     var start_day = +d3.select('#range-start-day').node().value;
     var start_hour = +d3.select("#range-start-hours").node().value;
     range_start = start_day + start_hour;
-    console.log(`Range Start: ${utcFormat(range_start)}`);
+    console.log(`Range Start: ${formatter(range_start)}`);
 
     var end_day = +d3.select('#range-end-day').node().value;
     var end_hour = +d3.select("#range-end-hours").node().value;
     range_end = end_day + end_hour;
-    console.log(`Range End: ${utcFormat(range_end)}`);
+    console.log(`Range End: ${formatter(range_end)}`);
+
+    selectVehicle();
 }
 
-function populateRangeSelects() {
+function populateOptions() {
     days = [
         Date.UTC(2014, 0, 6, 0, 0, 0),
         Date.UTC(2014, 0, 7, 0, 0, 0),
@@ -188,6 +223,12 @@ function populateRangeSelects() {
         [43200000, '12:00'],
         [64800000, '18:00']
     ];
+
+    ids = [];
+
+    for (i = 0; i <= 35; ++i) {
+        ids.push(i);
+    }
 
     var rsd = d3.select('#range-start-day');
 
@@ -240,15 +281,26 @@ function populateRangeSelects() {
         .text(function(d, i) { 
             return hours[i][1];
         });
-        
-    console.log("Time Range Updated!")
+
+    var vehicle = d3.select("#select-vehicle");
+
+    vehicle.selectAll('option')
+        .data(ids)
+        .enter()
+        .append('option')
+        .attr('value', function(d,i) {
+            return ids[i];
+        })
+        .text(function(d, i) { 
+            return ids[i];
+        });
+
+    // Default range 01/06/2014 00:00 - 01/06/2014 00:00
     var start_day = +d3.select('#range-start-day').node().value;
     var start_hour = +d3.select("#range-start-hours").node().value;
     range_start = start_day + start_hour;
-    console.log(`Range Start: ${utcFormat(range_start)}`);
 
     var end_day = +d3.select('#range-end-day').node().value;
     var end_hour = +d3.select("#range-end-hours").node().value;
     range_end = end_day + end_hour;
-    console.log(`Range End: ${utcFormat(range_end)}`);
 }
