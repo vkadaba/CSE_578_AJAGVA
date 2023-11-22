@@ -15,11 +15,11 @@ const formatter = d3.utcFormat("%m/%d/%Y %H:%M:%S");
 
 document.addEventListener('DOMContentLoaded', function () {
     const import_files = [
-        d3.csv('data/gps.csv'), 
-        d3.csv('data/car-assignments.csv'),
-        d3.csv('data/cc_data.csv'),
-        d3.csv('data/loyalty_data.csv'),
-        d3.json('data/Abila.geojson')
+        d3.csv('./data/gps.csv'), 
+        d3.csv('./data/car-assignments.csv'),
+        d3.csv('./data/cc_data.csv'),
+        d3.csv('./data/loyalty_data.csv'),
+        d3.json('./data/Abila.geojson')
     ];
 
     Promise.all(import_files).then(function (values) {
@@ -60,8 +60,89 @@ document.addEventListener('DOMContentLoaded', function () {
 
         initZoom();
         
+       
+
     });
 });
+
+///////////// Filtering suspicious activity for frequest stops in short time spans
+function calculateDistance(lat1, lon1, lat2, lon2) {
+               
+    var R = 6371; 
+    var dLat = deg2rad(lat2-lat1);
+    var dLon = deg2rad(lon2-lon1); 
+    var a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2); 
+    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    var distance = R * c; 
+    return distance;
+}
+
+function deg2rad(deg) {
+    return deg * (Math.PI/180);
+}
+
+function analyzeRoutes(data) {
+    const groupedData = {};
+    
+    const DISTANCE_THRESHOLD = 0.1; //maximum distance between two consecutive GPS points to consider the vehicle as stopped
+    const TIME_THRESHOLD = 6 * 60 * 1000; //The minimum time that needs to pass between two consecutive GPS records to consider it a significant stop
+    const FREQUENT_STOPS_THRESHOLD = 10;// The minimum number of stops required on a route to be classified as having frequent stops
+
+    const groupedDataByDateAndId = {};
+
+    data.forEach(point => {
+        const date = new Date(point.Timestamp).toDateString(); // Extract just the date part
+        const id = point.id;
+
+        if (!groupedDataByDateAndId[date]) {
+            groupedDataByDateAndId[date] = {};
+        }
+        if (!groupedDataByDateAndId[date][id]) {
+            groupedDataByDateAndId[date][id] = [];
+        }
+
+        groupedDataByDateAndId[date][id].push(point);
+    });
+
+    const results = [];
+
+    Object.keys(groupedDataByDateAndId).forEach(date => {
+        const routesForDate = groupedDataByDateAndId[date];
+
+        Object.keys(routesForDate).forEach(id => {
+            const route = routesForDate[id];
+            let stopCount = 0;
+            let lastPoint = null;
+            let stopTimestamps = [];
+
+            route.forEach(point => {
+                if (lastPoint) {
+                    const distance = calculateDistance(
+                        parseFloat(lastPoint.lat), parseFloat(lastPoint.long),
+                        parseFloat(point.lat), parseFloat(point.long)
+                    );
+                    const timeDiff = new Date(point.Timestamp) - new Date(lastPoint.Timestamp);
+
+                    if (distance < DISTANCE_THRESHOLD && timeDiff > TIME_THRESHOLD) {
+                        stopCount++;
+                        stopTimestamps.push(point.Timestamp);
+                    }
+                }
+                lastPoint = point;
+            });
+
+            if (stopCount >= FREQUENT_STOPS_THRESHOLD) {
+                results.push({ date, id, stopCount });
+            }
+        });
+    });
+
+    return results;
+}
+/////////////////////////////////////////////
 
 function updateMap(option) {
 var extent = d3.extent(selected_vehicle, d => {return d.timestamp});
@@ -156,6 +237,10 @@ function selectVehicle() {
 };
 
 function dataWrangle() {
+    const routes = analyzeRoutes(gps_data);
+    console.log(routes);
+
+
     var utcParse = d3.utcParse('%m/%d/%Y %H:%M:%S')
     temp = gps_data.map(d => ({
         "timestamp": utcParse(d.Timestamp).getTime(),
