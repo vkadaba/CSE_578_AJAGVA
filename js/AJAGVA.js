@@ -57,7 +57,6 @@ document.addEventListener('DOMContentLoaded', function () {
         
         selectVehicle();
         updateMap();
-
         initZoom();
         
     });
@@ -124,10 +123,32 @@ const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
                 .attr('fill', d => {
                     return color(d.timestamp);
                 })
-                .style('opacity', 0.85);
+                .style('opacity', 0.85)
                 // .style('opacity', d => {
                 //     return opacity(d.timestamp);
                 // });
+            .on("mouseenter", function(d, i) {
+                tooltip.style("display", "initial");
+            })
+            .on("mousemove", function(d, i) {
+                var gps_info = i;
+                var displayString = `
+                    Vehicle ID: ${gps_info.CarID} <br/>
+                    Time: ${formatter(gps_info.timestamp)} <br/>
+                    Long, Lat: ${gps_info.coords}
+                `
+                
+                tooltip.html(
+                     displayString
+                )
+                .style("left", (d.pageX + 5) + "px")
+                .style("top", (d.pageY - 35) + "px");
+            })
+            .on("mouseleave", function(d) {
+
+                tooltip.style("display", "none")
+                    .html();
+            });
     }
     else if(option === "remove-gps") {
         map_svg.selectAll('.vehicle_group').remove();
