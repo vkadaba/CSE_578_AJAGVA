@@ -261,6 +261,7 @@ function selectVehicle() {
 
 function dataWrangle() {
     const routes = analyzeRoutes(gps_data);
+    console.log("Suspicious Routes Analyed");
     console.log(routes);
 
 
@@ -357,6 +358,12 @@ function populateOptions() {
     for (i = 0; i <= 35; ++i) {
         ids.push(i);
     }
+
+    ids.push(101);
+    ids.push(104);
+    ids.push(105);
+    ids.push(106);
+    ids.push(107);
 
     var rsd = d3.select('#range-start-day');
 
