@@ -117,16 +117,17 @@ const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
                 .attr("transform", d => {
                     return `translate(${projection(d.coords)})`
                 })
-                // .attr('r', 2)
-                .attr('r', d => {
-                    return size(d.timestamp);
-                })
+                .attr('r', 0.75)
+                // .attr('r', d => {
+                //     return size(d.timestamp);
+                // })
                 .attr('fill', d => {
                     return color(d.timestamp);
                 })
-                .style('opacity', d => {
-                    return opacity(d.timestamp);
-                });
+                .style('opacity', 0.85);
+                // .style('opacity', d => {
+                //     return opacity(d.timestamp);
+                // });
     }
     else if(option === "remove-gps") {
         map_svg.selectAll('.vehicle_group').remove();
@@ -153,6 +154,7 @@ function selectVehicle() {
     });
 
     console.log(selected_vehicle);
+    map_svg.selectAll('.vehicle_group').remove();
 };
 
 function dataWrangle() {
@@ -235,9 +237,13 @@ function populateOptions() {
 
     hours = [
         [0, '00:00'],
+        [10800000, '03:00'],
         [21600000, '06:00'],
+        [32400000, '09:00'],
         [43200000, '12:00'],
-        [64800000, '18:00']
+        [54000000, '15:00'],
+        [64800000, '18:00'],
+        [75600000, '21:00']
     ];
 
     ids = [];
