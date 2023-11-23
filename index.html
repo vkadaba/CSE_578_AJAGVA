@@ -22,33 +22,27 @@
                 border-color: black;
                 border-radius: 8px;
             }
-    .wrapper {
-        display: flex;
-        width: 100%;
-    }
-
-    #sidebar {
-        width: 300px;
-        position: fixed;
-        top: 0;
-        left: 0;
-        height: 100vh;
-        background: whitesmoke;
-        color: black;
-        border: 1px;
-        border-style: solid;
-        border-color: black;
-
-    }
 </style>
 <body>
-    <div class="wrapper">
-        <div id="sidebar">
-            <div class="sidebar-header text-center">
-                <h3>Control Panel</h3>
+    <div class="container">
+        <div class="row">
+            <div class="col text-center">
+                <br/>
             </div>
-            <div class="col text-center border border-1 p-1">
-                <span id="print-range"><h5>Current Range</h5> none<br> - <br> none<br></span><br/>
+        </div>
+        <div class="col text-center">
+            <svg id="map_svg"></svg>
+        </div>
+        <div class="row">
+            <div class="col text-center border border-2 p-2 mt-1 rounded">
+                Map Tools<br/>
+                <button type="button" class="btn btn-secondary" onclick="resetZoom();">Reset Zoom</button>
+                <button type="button" class="btn btn-secondary" onclick="centerMap();">Center Map</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                <span id="print-range">Select Time Range</span><br/>
                 <select name="range_start_day" id="range-start-day">
                 </select>
                 <select name="range_start_hours" id="range-start-hours">
@@ -60,31 +54,18 @@
                 </select><br/><br/>
                 <button type="button" class="btn btn-primary" onclick="updateRange();">Update Range</button>     
             </div>
-            <div class="col text-center border border-1 p-1" id="vehicle_select">
-                <h5>Vehicle ID</h5>
+            <div class="col text-center" id="vehicle_select">
+                Select a Vehicle ID<br/>
                 <select name="vehicle_id" id="select-vehicle" onchange="selectVehicle();">
                 </select> <br/>
                 <span id="print-vehicle">Vehicle Info</span><br/>
                 <button type="button" class="btn btn-primary" onclick="updateMap('draw-gps');">Plot Path</button>
                 <button type="button" class="btn btn-warning" onclick="updateMap('remove-gps');">Remove Path</button>
             </div>
-            <div class="col text-center border border-1 p-1">
-                <h5>Map Tools</h5>
-                <button type="button" class="btn btn-primary" onclick="resetZoom();">Reset Zoom</button>
-                <button type="button" class="btn btn-primary" onclick="centerMap();">Center Map</button>
-            </div>
         </div>
-        <div id="content" class="container-fluid">
+        <div class="row">
             <div class="col text-center">
-                <svg id="map_svg"></svg>
-            </div>
-            <div class="row">
-                
-            </div>
-            <div class="row">
-                <div class="col text-center">
-                    Placeholder
-                </div>
+                Placeholder
             </div>
         </div>
     </div>  
