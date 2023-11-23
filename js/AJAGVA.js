@@ -61,7 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-///////////// Filtering suspicious activity for frequest stops in short time spans
+///////////// Filtering suspicious activity for frequest stops in a route
 function calculateDistance(lat1, lon1, lat2, lon2) {
                
     var R = 6371; 
@@ -84,9 +84,10 @@ function analyzeRoutes(data) {
     const groupedData = {};
     
     const DISTANCE_THRESHOLD = 0.1; //maximum distance between two consecutive GPS points to consider the vehicle as stopped
-    const TIME_THRESHOLD = 6 * 60 * 1000; //The minimum time that needs to pass between two consecutive GPS records to consider it a significant stop
-    const FREQUENT_STOPS_THRESHOLD = 10;// The minimum number of stops required on a route to be classified as having frequent stops
-
+    const TIME_THRESHOLD = 10 * 60 * 1000; //The minimum time that needs to pass between two consecutive GPS records to consider it a significant stop
+    const FREQUENT_STOPS_THRESHOLD = 5;// The minimum number of stops required on a route to be classified as having frequent stops
+    const MAX_TIME_SPAN = 180 * 60 * 1000;//The maximum time span in which to count the stops
+    
     const groupedDataByDateAndId = {};
 
     data.forEach(point => {
@@ -111,6 +112,7 @@ function analyzeRoutes(data) {
         Object.keys(routesForDate).forEach(id => {
             const route = routesForDate[id];
             let stopCount = 0;
+            let firstStopTime = null;
             let lastPoint = null;
             let stopTimestamps = [];
 
@@ -123,6 +125,10 @@ function analyzeRoutes(data) {
                     const timeDiff = new Date(point.Timestamp) - new Date(lastPoint.Timestamp);
 
                     if (distance < DISTANCE_THRESHOLD && timeDiff > TIME_THRESHOLD) {
+                        if (firstStopTime === null) {
+                            firstStopTime = new Date(point.Timestamp);
+                        }}
+                    if (new Date(point.Timestamp) - firstStopTime <= MAX_TIME_SPAN) {
                         stopCount++;
                         stopTimestamps.push(point.Timestamp);
                     }
