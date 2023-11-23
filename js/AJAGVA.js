@@ -11,7 +11,7 @@ var map_svg, road_group;
 // Use this formatter to convert from UTC to a human readable format
 // Ex: var converted = formatter(1388966400000);
 // console.log(converted) --> "01/06/2014 00:00:00"
-const formatter = d3.utcFormat("%m/%d/%Y %H:%M:%S");
+const formatter = d3.utcFormat("%a %m/%d/%Y %H:%M:%S");
 
 document.addEventListener('DOMContentLoaded', function () {
     const import_files = [
