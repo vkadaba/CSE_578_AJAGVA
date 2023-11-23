@@ -193,13 +193,14 @@ const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
             .attr('class', 'vehicle_group')
             .attr('transform', `translate(${margin.left}, 0)`);
 
+        var vehicle_line = d3.line().x(d => d.x).y(d => d.y);
+
         vehicle_group.selectAll('.vehicle_mark')
             .data(selected_vehicle)
             .join('circle')
                 .attr('class', 'vehicle_mark')
-                .attr("transform", d => {
-                    return `translate(${projection(d.coords)})`
-                })
+                .attr('cx', d => {return d.x})
+                .attr('cy', d => {return d.y})
                 .attr('r', 0.75)
                 // .attr('r', d => {
                 //     return size(d.timestamp);
@@ -233,6 +234,25 @@ const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
                 tooltip.style("display", "none")
                     .html();
             });
+
+            /*------------Path Based Plotting--------------------
+            .enter()
+            .append('path')
+            .attr('class', 'vehicle_mark')
+            .attr('d', function (d, i) {
+                if (i === selected_vehicle.length - 1) {
+                    return vehicle_line([selected_vehicle[i], selected_vehicle[i]]);
+                }
+                else {
+                    return vehicle_line([selected_vehicle[i], selected_vehicle[i+1]]);
+                }
+            })
+            .attr('fill', 'none')
+            .attr('stroke', d => {
+                return color(d.timestamp);
+            })
+            .attr('stroke-width', '0.5px')
+            ------------Path Based Plotting--------------------*/
     }
     else if(option === "remove-gps") {
         map_svg.selectAll('.vehicle_group').remove();
@@ -249,7 +269,11 @@ function selectVehicle() {
     gps_data.forEach(d => {
         if (d.CarID == vehicle_id){
             if (range_start <= d.timestamp && d.timestamp <= range_end){
-                selected_vehicle.push(d);
+                var temp = d;
+                var point = projection(d.coords);
+                Object.assign(temp, {'x': point[0]});
+                Object.assign(temp, {'y': point[1]});
+                selected_vehicle.push(temp);
             }
         }
     });
