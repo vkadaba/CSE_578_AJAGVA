@@ -56,11 +56,8 @@ document.addEventListener('DOMContentLoaded', function () {
             .attr('height', height);
         
         selectVehicle();
-        updateMap();
         initZoom();
-        
-       
-
+        updateMap();
     });
 });
 
@@ -236,10 +233,6 @@ const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
     }
 };
 
-function plotPath(option) {
-    
-}
-
 // Gets vehicle selected from dropdown and creates subset list of all
 // GPS coordinates for the vehicle
 function selectVehicle() {
@@ -255,6 +248,30 @@ function selectVehicle() {
         }
     });
 
+    // Vehicle Info
+    var label = d3.select("#print-vehicle");
+    var assignment = getAssignment(vehicle_id);
+    var string;
+    if (vehicle_id != 0 && vehicle_id <= 35) {
+        string = `Assigned To: ${assignment.FirstName} ${assignment.LastName}<br/>
+        Department: ${assignment.CurrentEmploymentType}<br/>
+        Title: ${assignment.CurrentEmploymentTitle}
+        `
+    }
+    else if(vehicle_id == 0){
+        string = `
+        Assigned To: Albina Hafon, Benito Hawelon, Claudio Hawelon, Henk Mies, Valeria Morlun, Adan Morlun, 
+        Cecilia Morluniau, Irene Nant, Dylan Scozzese <br/>
+        Department: Facilities <br/>
+        Title: Truck Drivers <br/>
+        `
+    }
+    else {
+        string = "No assingment data found!"
+    }
+
+    label.html(string);
+    
     console.log(selected_vehicle);
     map_svg.selectAll('.vehicle_group').remove();
 };
@@ -298,12 +315,22 @@ function dataWrangle() {
     utcParse = d3.utcParse('%m/%d/%Y')
     temp = loyalty_data.map(d => ({
         "localtion": d.location,
-        "loyaltynum": d.loyaltynum,
+        "loyaltynum": +d.loyaltynum,
         "price": +d.price,
         "timestamp": utcParse(d.timestamp).getTime()
     }));
 
     loyalty_data = temp;
+}
+
+function getAssignment(id) {
+    index = car_assignments.findIndex(d => d.CarID == id);
+    if (index != -1) {
+        return car_assignments[index];
+    }
+    else {
+        return undefined;
+    }
 }
 
 // Ranges are not validated!
@@ -319,6 +346,10 @@ function updateRange() {
     var end_hour = +d3.select("#range-end-hours").node().value;
     range_end = end_day + end_hour;
     console.log(`Range End: ${formatter(range_end)}`);
+
+    var label = d3.select("#print-range");
+    var string = `Current Range: ${formatter(range_start)} - ${formatter(range_end)}`
+    label.text(string);
 
     selectVehicle();
 }

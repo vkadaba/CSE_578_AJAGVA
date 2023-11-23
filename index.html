@@ -27,14 +27,14 @@
     <div class="container">
         <div class="row">
             <div class="col text-center">
-                <br>
+                <br/>
             </div>
         </div>
         <div class="col text-center">
             <svg id="map_svg"></svg>
         </div>
         <div class="row">
-            <div class="col text-center border border-2 p-2 mt-2 rounded">
+            <div class="col text-center border border-2 p-2 mt-1 rounded">
                 Map Tools<br/>
                 <button type="button" class="btn btn-secondary" onclick="resetZoom();">Reset Zoom</button>
                 <button type="button" class="btn btn-secondary" onclick="centerMap();">Center Map</button>
@@ -42,7 +42,7 @@
         </div>
         <div class="row">
             <div class="col text-center">
-                Select Time Range<br>
+                <span id="print-range">Select Time Range</span><br/>
                 <select name="range_start_day" id="range-start-day">
                 </select>
                 <select name="range_start_hours" id="range-start-hours">
@@ -52,14 +52,20 @@
                 </select>
                 <select name="range_end_hours" id="range-end-hours">
                 </select><br/><br/>
-                <button type="button" class="btn btn-primary" onclick="updateRange();">Update Range</button>
+                <button type="button" class="btn btn-primary" onclick="updateRange();">Update Range</button>     
             </div>
             <div class="col text-center" id="vehicle_select">
                 Select a Vehicle ID<br/>
                 <select name="vehicle_id" id="select-vehicle" onchange="selectVehicle();">
-                </select> <br/><br/>
+                </select> <br/>
+                <span id="print-vehicle">Vehicle Info</span><br/>
                 <button type="button" class="btn btn-primary" onclick="updateMap('draw-gps');">Plot Path</button>
                 <button type="button" class="btn btn-warning" onclick="updateMap('remove-gps');">Remove Path</button>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col text-center">
+                Placeholder
             </div>
         </div>
     </div>  
