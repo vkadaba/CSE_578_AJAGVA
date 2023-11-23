@@ -348,8 +348,11 @@ function updateRange() {
     console.log(`Range End: ${formatter(range_end)}`);
 
     var label = d3.select("#print-range");
-    var string = `Current Range: ${formatter(range_start)} - ${formatter(range_end)}`
-    label.text(string);
+    var string = `<h5>Current Range</h5>
+    ${formatter(range_start)}<br/>
+    -<br/>
+    ${formatter(range_end)}<br/>`
+    label.html(string);
 
     selectVehicle();
 }
