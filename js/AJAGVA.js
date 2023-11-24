@@ -57,13 +57,33 @@ document.addEventListener('DOMContentLoaded', function () {
         
         selectVehicle();
         initZoom();
-        updateMap();
+        if(window.locations) {
+            updateMap();
+        } else {
+            console.error('Locations data is not available.');
+        }
     });
 });
 
+
+///////////////////////////////////////////////////////
+function showTooltip(d) {
+    tooltip
+        .html(d.name)
+        .style("left", (d.pageX + 10) + "px")
+        .style("top", (d.pageY - 10) + "px")
+        .style("display", "initial");
+}
+
+
+function hideTooltip() {
+    tooltip.style("display", "none");
+}
+
+
+
 ///////////// Filtering suspicious activity for frequest stops in a route
-function calculateDistance(lat1, lon1, lat2, lon2) {
-               
+function calculateDistance(lat1, lon1, lat2, lon2) { 
     var R = 6371; 
     var dLat = deg2rad(lat2-lat1);
     var dLon = deg2rad(lon2-lon1); 
@@ -84,12 +104,12 @@ function analyzeRoutes(data) {
     const groupedData = {};
     
     const DISTANCE_THRESHOLD = 0.1; //maximum distance between two consecutive GPS points to consider the vehicle as stopped
-    const TIME_THRESHOLD = 10 * 60 * 1000; //The minimum time that needs to pass between two consecutive GPS records to consider it a significant stop
-    const FREQUENT_STOPS_THRESHOLD = 5;// The minimum number of stops required on a route to be classified as having frequent stops
-    const MAX_TIME_SPAN = 180 * 60 * 1000;//The maximum time span in which to count the stops
+    const TIME_THRESHOLD = 10 * 60 * 1000; //minimum time that needs to pass between two consecutive GPS records to consider it a significant stop
+    const FREQUENT_STOPS_THRESHOLD = 5;// minimum number of stops required on a route to be classified as having frequent stops
+    const MAX_TIME_SPAN = 180 * 60 * 1000;//maximum time span in which to count the stops
     
     const groupedDataByDateAndId = {};
-
+ 
     data.forEach(point => {
         const date = new Date(point.Timestamp).toDateString(); // Extract just the date part
         const id = point.id;
@@ -153,6 +173,21 @@ const size = d3.scaleSqrt().domain(extent).range([1.5, 0.5]);
 const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
 
     map_svg.selectAll('.road_group').remove();
+
+
+    const locationMarkers = map_svg.append('g')
+        .attr('class', 'location_markers')
+        .selectAll('circle')
+        .data(locations)
+        .enter()
+        .append('circle')
+            .attr('class', 'location_marker')
+            .attr("transform", d => `translate(${projection([d.x, d.y])})`)
+            .attr('r', 5)
+            .attr('fill', 'red')
+            .on("mouseenter", (event, d) => showTooltip(event, d))
+            .on("mouseleave", hideTooltip);
+
 
     var road_group = map_svg.append('g')
         .attr('class', 'road_group')
@@ -354,11 +389,8 @@ function updateRange() {
     console.log(`Range End: ${formatter(range_end)}`);
 
     var label = d3.select("#print-range");
-    var string = `<h5>Current Range</h5>
-    ${formatter(range_start)}<br/>
-    -<br/>
-    ${formatter(range_end)}<br/>`
-    label.html(string);
+    var string = `Current Range: ${formatter(range_start)} - ${formatter(range_end)}`
+    label.text(string);
 
     selectVehicle();
 }
@@ -487,6 +519,8 @@ let zoom = d3.zoom()
 
 function handleZoom(e) {
     d3.select('.road_group')
+        .attr('transform', e.transform);
+    d3.select('.location_markers')
         .attr('transform', e.transform);
 
     d3.select('.vehicle_group')
