@@ -11,7 +11,7 @@ var map_svg, road_group;
 // Use this formatter to convert from UTC to a human readable format
 // Ex: var converted = formatter(1388966400000);
 // console.log(converted) --> "01/06/2014 00:00:00"
-const formatter = d3.utcFormat("%m/%d/%Y %H:%M:%S");
+const formatter = d3.utcFormat("%a %m/%d/%Y %H:%M:%S");
 
 document.addEventListener('DOMContentLoaded', function () {
     const import_files = [
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 ///////////////////////////////////////////////////////
-function showTooltip(d) {
+function showTooltip(event, d) {
     tooltip
         .html(d.name)
         .style("left", (d.pageX + 10) + "px")
@@ -173,19 +173,8 @@ const size = d3.scaleSqrt().domain(extent).range([1.5, 0.5]);
 const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
 
     map_svg.selectAll('.road_group').remove();
+    map_svg.selectAll('.location_markers').remove();
 
-    const locationMarkers = map_svg.append('g')
-        .attr('class', 'location_markers')
-        .selectAll('circle')
-        .data(locations)
-        .enter()
-        .append('circle')
-            .attr('class', 'location_marker')
-            .attr("transform", d => `translate(${projection([d.x, d.y])})`)
-            .attr('r', 5)
-            .attr('fill', 'red')
-            .on("mouseenter", (event, d) => showTooltip(event, d))
-            .on("mouseleave", hideTooltip);
 
     var road_group = map_svg.append('g')
         .attr('class', 'road_group')
@@ -270,6 +259,19 @@ const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
     else if(option === "remove-gps") {
         map_svg.selectAll('.vehicle_group').remove();
     }
+
+    const locationMarkers = map_svg.append('g')
+        .attr('class', 'location_markers')
+        .selectAll('circle')
+        .data(locations)
+        .enter()
+        .append('circle')
+            .attr("transform", d => `translate(${projection([d.x, d.y])})`)
+            .attr('r', 10)
+            .attr('fill', 'red')
+            .attr('opacity', 0.5)
+            .on("mouseenter", (event, d) => showTooltip(event, d))
+            .on("mouseleave", hideTooltip);
 };
 
 // Gets vehicle selected from dropdown and creates subset list of all
