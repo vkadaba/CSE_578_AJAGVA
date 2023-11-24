@@ -54,7 +54,21 @@ document.addEventListener('DOMContentLoaded', function () {
             .attr('class', 'map_svg')
             .attr('width', width)
             .attr('height', height);
-        
+            const locationMarkers = map_svg.append('g')
+            .attr('class', 'location_markers')
+            .selectAll('circle')
+            .data(locations)
+            .enter()
+            .append('circle')
+                .attr('class', 'location_marker')
+                .attr("transform", d => `translate(${projection([d.x, d.y])})`)
+                .attr('r', 5)
+                .attr('fill', 'red')
+                .on("mouseenter", (event, d) => showTooltip(event, d))
+                .on("mouseleave", hideTooltip);
+        locationMarkers.on("click", (event, d) => {
+                    drawLineGraphOnClick(d.name);
+                });
         selectVehicle();
         initZoom();
         updateMap();
@@ -63,11 +77,238 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 ///////////////////////////////////////////////////////
-function showTooltip(d) {
+function normalizeLocationName(name) {
+    return name.toLowerCase()
+               .replace(/[’'´`]/g, "'") 
+               .replace(/[éèêë]/g, "e")
+               .replace(/�s/g, "'s")
+               .replace(/�/, "e")
+               .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+}
+function showPopularLocationsByTime() {
+    const combinedData = cc_data.concat(loyalty_data);
+    const filteredData = combinedData.filter(d => d.timestamp >= range_start && d.timestamp <= range_end && d.location !== undefined);
+    const aggregatedData = d3.rollups(
+        filteredData,
+        group => d3.sum(group, d => 1), 
+        d => normalizeLocationName(d.location),
+        d => d3.timeDay.floor(new Date(d.timestamp)) 
+    );
+    const formattedData = [];
+    aggregatedData.forEach(([location, dates]) => {
+        dates.forEach(([date, count]) => {
+            formattedData.push({ location, date, count });
+        });
+    });
+
+    formattedData.sort((a, b) => a.date - b.date);
+    const topLocations = Array.from(d3.rollups(
+        formattedData,
+        group => d3.sum(group, d => d.count),
+        d => d.location
+    ))
+    .sort((a, b) => b[1] - a[1]) 
+    .slice(0, 10) //top 10 locations
+    .map(d => d[0]); 
+
+    
+    highlightTopLocations(topLocations);
+    console.log(topLocations);
+  
+    drawAggregatedLineGraph(formattedData);
+}
+function highlightTopLocations(locations) {
+    d3.selectAll('.location_marker')
+        .each(function(d) {
+            if(locations.includes(normalizeLocationName(d.name))) {
+                d3.select(this)
+                    .attr('r', 10) 
+                    .attr('fill', 'gold');
+            } else {
+                d3.select(this)
+                    .attr('r', 5) 
+                    .attr('fill', 'red'); 
+            }
+        });
+}
+function drawAggregatedLineGraph(data) {
+
+    const container = d3.select("#lineGraphContainer");
+
+    container.selectAll("svg").remove();
+
+    const margin = {top: 20, right: 250, bottom: 30, left: 50},
+        width = 1080 - margin.left - margin.right,
+        height = 500 - margin.top - margin.bottom;
+    const svg = container
+        .append("svg")
+        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom);
+        svg.append("rect")
+        .attr("width", "100%")
+        .attr("height", "100%")
+        .attr("fill", "white");
+
+    const graphSvg = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+        
+    const x = d3.scaleTime()
+        .domain(d3.extent(data, d => d.date))
+        .range([0, width]);
+    graphSvg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(data, d => d.count)])
+        .range([height, 0]);
+    graphSvg.append("g")
+        .call(d3.axisLeft(y));
+
+    const sumstat = d3.group(data, d => d.location);
+
+    const color = d3.scaleOrdinal()
+        .domain(Array.from(sumstat.keys()))
+        .range(d3.schemeCategory10);
+
+    graphSvg.selectAll(".line")
+        .data(sumstat)
+        .join("path")
+            .attr("fill", "none")
+            .attr("stroke", d => color(d[0]))
+            .attr("stroke-width", 1.5)
+            .attr("d", d => {
+                return d3.line()
+                    .x(d => x(d.date))
+                    .y(d => y(d.count))
+                    (d[1])
+            });
+            const legend = svg.append("g")
+            .attr("transform", `translate(${width + margin.left + 40},${margin.top})`)
+            .selectAll("g")
+            .data(Array.from(sumstat.keys()))
+            .join("g")
+            .attr("transform", (d, i) => `translate(0,${i * 20})`);
+    
+        legend.append("rect")
+            .attr("x", 0)
+            .attr("width", 19)
+            .attr("height", 19)
+            .attr("fill", color);
+    
+        legend.append("text")
+            .attr("x", 24)
+            .attr("y", 9.5)
+            .attr("dy", "0.32em")
+            .text(d => d);
+    }
+
+function getLineGraphData(locationName) {
+    const normalizedLocationName = normalizeLocationName(locationName);
+    const filteredData = cc_data.filter(d => normalizeLocationName(d.location) === normalizedLocationName);
+    const dataAggregated = d3.rollups(
+        filteredData,
+        v => d3.sum(v, leaf => parseFloat(leaf.price)), 
+        d => new Date(parseInt(d.timestamp)).setHours(0, 0, 0, 0) 
+    );
+    const dataArray = Array.from(dataAggregated, ([date, total]) => ({ date, total }));
+
+    return dataArray;
+}
+
+function drawLineGraph(svg, locationName) {
+    const filteredData = getLineGraphData(locationName).filter(d => 
+        d.date >= range_start && d.date <= range_end
+    );
+
+    const margin = {top: 20, right: 30, bottom: 50, left: 60},
+          width = 600 - margin.left - margin.right,
+          height = 400 - margin.top - margin.bottom;
+
+    svg.selectAll("*").remove();
+
+    svg.append("rect")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+        .attr("fill", "white");
+
+    const graphSvg = svg.append("g")
+        .attr("transform", `translate(${margin.left},${margin.top})`);
+
+    const x = d3.scaleTime()
+        .domain(d3.extent(filteredData, d => d.date))
+        .range([0, width]);
+    graphSvg.append("g")
+        .attr("transform", `translate(0,${height})`)
+        .call(d3.axisBottom(x));
+
+    const y = d3.scaleLinear()
+        .domain([0, d3.max(filteredData, d => d.total)])
+        .range([height, 0]);
+    graphSvg.append("g")
+        .call(d3.axisLeft(y));
+
+    // Line path
+    graphSvg.append("path")
+        .datum(filteredData)
+        .attr("fill", "none")
+        .attr("stroke", "steelblue")
+        .attr("stroke-width", 1.5)
+        .attr("d", d3.line()
+            .x(d => x(d.date))
+            .y(d => y(d.total))
+        );
+        const tooltip = d3.select(".myTooltip");
+    // Nodes for individual transactions
+    graphSvg.selectAll(".transaction-node")
+        .data(filteredData)
+        .enter()
+        .append("circle")
+            .attr("class", "transaction-node")
+            .attr("cx", d => x(d.date))
+            .attr("cy", d => y(d.total))
+            .attr("r", 5)
+            .attr("fill", "orange")
+            .on("mouseover", (event, d) => {
+                // Show tooltip
+                tooltip.transition().duration(200).style("opacity", 0.9);
+                tooltip.html(`Transaction: $${d.total}<br/>Date: ${d.date}`)
+                    .style("left", (event.pageX) + "px")
+                    .style("top", (event.pageY - 28) + "px");
+            })
+            .on("mouseout", () => {
+                // Hide tooltip
+                tooltip.transition().duration(500).style("opacity", 0);
+            });
+
+    // Location name at the bottom
+    svg.append("text")
+        .attr("x", width / 2)
+        .attr("y", height + margin.top + 40)
+        .attr("text-anchor", "middle")
+        .style("font-size", "16px")
+        .text(locationName);
+}
+        
+
+function drawLineGraphOnClick(locationName) {
+   
+    const container = d3.select("#lineGraphContainer");
+    container.selectAll("svg").remove();
+
+    const svg = container.append("svg")
+        .attr("width", 600)
+        .attr("height", 400); 
+
+    drawLineGraph(svg, locationName);
+}
+function showTooltip(event, d) {
+    
+
     tooltip
-        .html(d.name)
-        .style("left", (d.pageX + 10) + "px")
-        .style("top", (d.pageY - 10) + "px")
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 10) + "px")
         .style("display", "initial");
 }
 
@@ -98,8 +339,8 @@ function analyzeRoutes(data) {
     const groupedData = {};
     
     const DISTANCE_THRESHOLD = 0.1; //maximum distance between two consecutive GPS points to consider the vehicle as stopped
-    const TIME_THRESHOLD = 5 * 60 * 1000; //minimum time that needs to pass between two consecutive GPS records to consider it a significant stop
-    const FREQUENT_STOPS_THRESHOLD = 5;// minimum number of stops required on a route to be classified as having frequent stops
+    const TIME_THRESHOLD = 30 * 60 * 1000; //minimum time that needs to pass between two consecutive GPS records to consider it a significant stop
+    const FREQUENT_STOPS_THRESHOLD = 6;// minimum number of stops required on a route to be classified as having frequent stops
     // const MAX_TIME_SPAN = 180 * 60 * 1000;//maximum time span in which to count the stops
     
     const groupedDataByDateAndId = {};
@@ -173,19 +414,9 @@ const size = d3.scaleSqrt().domain(extent).range([1.5, 0.5]);
 const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
 
     map_svg.selectAll('.road_group').remove();
+    
 
-    const locationMarkers = map_svg.append('g')
-        .attr('class', 'location_markers')
-        .selectAll('circle')
-        .data(locations)
-        .enter()
-        .append('circle')
-            .attr('class', 'location_marker')
-            .attr("transform", d => `translate(${projection([d.x, d.y])})`)
-            .attr('r', 5)
-            .attr('fill', 'red')
-            .on("mouseenter", (event, d) => showTooltip(event, d))
-            .on("mouseleave", hideTooltip);
+    
 
     var road_group = map_svg.append('g')
         .attr('class', 'road_group')
