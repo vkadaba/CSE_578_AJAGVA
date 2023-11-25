@@ -395,24 +395,30 @@ function drawAggregatedLineGraph(data) {
         .text(d => d[0]);
     }
 
-function getLineGraphData(locationName) {
-    const normalizedLocationName = normalizeLocationName(locationName);
-    const filteredData = cc_data.filter(d => normalizeLocationName(d.location) === normalizedLocationName);
-    const dataAggregated = d3.rollups(
-        filteredData,
-        v => d3.sum(v, leaf => parseFloat(leaf.price)), 
-        d => new Date(parseInt(d.timestamp)).setHours(0, 0, 0, 0) 
-    );
-    const dataArray = Array.from(dataAggregated, ([date, total]) => ({ date, total }));
-
-    return dataArray;
-}
-
+    function getLineGraphData(locationName) {
+        const normalizedLocationName = normalizeLocationName(locationName);
+        return cc_data.filter(d => 
+            normalizeLocationName(d.location) === normalizedLocationName &&
+            new Date(d.timestamp) >= range_start && new Date(d.timestamp) <= range_end
+        ).map(d => ({
+            date: new Date(d.timestamp),
+            total: parseFloat(d.price)
+        })).sort((a, b) => a.date - b.date);
+    }
+    
+    function getLoyaltyLineGraphData(locationName) {
+        const normalizedLocationName = normalizeLocationName(locationName);
+        return loyalty_data.filter(d => 
+            normalizeLocationName(d.location) === normalizedLocationName &&
+            new Date(d.timestamp) >= range_start && new Date(d.timestamp) <= range_end
+        ).map(d => ({
+            date: new Date(d.timestamp),
+            total: parseFloat(d.price)
+        })).sort((a, b) => a.date - b.date); 
+    }
 function drawLineGraph(svg, locationName) {
-    const filteredData = getLineGraphData(locationName).filter(d => 
-        d.date >= range_start && d.date <= range_end
-    );
-
+    const filteredCreditData = getLineGraphData(locationName);
+    const filteredLoyaltyData = getLoyaltyLineGraphData(locationName);
     const margin = {top: 20, right: 30, bottom: 50, left: 60},
           width = 600 - margin.left - margin.right,
           height = 400 - margin.top - margin.bottom;
@@ -427,51 +433,46 @@ function drawLineGraph(svg, locationName) {
     const graphSvg = svg.append("g")
         .attr("transform", `translate(${margin.left},${margin.top})`);
 
-    const x = d3.scaleTime()
-        .domain(d3.extent(filteredData, d => d.date))
-        .range([0, width]);
-    graphSvg.append("g")
-        .attr("transform", `translate(0,${height})`)
-        .call(d3.axisBottom(x));
+        const xExtent = d3.extent([...filteredCreditData, ...filteredLoyaltyData], d => d.date);
 
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(filteredData, d => d.total)])
-        .range([height, 0]);
-    graphSvg.append("g")
-        .call(d3.axisLeft(y));
+        const x = d3.scaleTime()
+            .domain(xExtent)
+            .range([0, width]);
+        graphSvg.append("g")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x));
+    
+        // Calculate the max for y-axis
+        const yMax = Math.max(
+            d3.max(filteredCreditData, d => d.total),
+            d3.max(filteredLoyaltyData, d => d.total)
+        );
+    
+        const y = d3.scaleLinear()
+            .domain([0, yMax])
+            .range([height, 0]);
+        graphSvg.append("g")
+            .call(d3.axisLeft(y));
+    
+        const line = d3.line()
+            .x(d => x(d.date))
+            .y(d => y(d.total))
+            .curve(d3.curveMonotoneX);
 
 
     graphSvg.append("path")
-        .datum(filteredData)
+        .datum(filteredCreditData)
         .attr("fill", "none")
-        .attr("stroke", "steelblue")
-        .attr("stroke-width", 1.5)
-        .attr("d", d3.line()
-            .x(d => x(d.date))
-            .y(d => y(d.total))
-        );
-        const tooltip = d3.select(".myTooltip");
-  
-    graphSvg.selectAll(".transaction-node")
-        .data(filteredData)
-        .enter()
-        .append("circle")
-            .attr("class", "transaction-node")
-            .attr("cx", d => x(d.date))
-            .attr("cy", d => y(d.total))
-            .attr("r", 5)
-            .attr("fill", "orange")
-            .on("mouseover", (event, d) => {
-    
-                tooltip.transition().duration(200).style("opacity", 0.9);
-                tooltip.html(`Transaction: $${d.total}<br/>Date: ${d.date}`)
-                    .style("left", (event.pageX) + "px")
-                    .style("top", (event.pageY - 28) + "px");
-            })
-            .on("mouseout", () => {
-    
-                tooltip.transition().duration(500).style("opacity", 0);
-            });
+        .attr("stroke", "#4e79a7")
+        .attr("stroke-width", 2)
+        .attr("d", line);
+
+    graphSvg.append("path")
+        .datum(filteredLoyaltyData)
+        .attr("fill", "none")
+        .attr("stroke", "#e15759")
+        .attr("stroke-width", 2)
+        .attr("d", line);
 
     svg.append("text")
         .attr("x", width / 2)
