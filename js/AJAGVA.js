@@ -83,7 +83,7 @@ function normalizeLocationName(name) {
                .replace(/[éèêë]/g, "e")
                .replace(/�s/g, "'s")
                .replace(/�/, "e")
-               .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
+               
 }
 function drawScatterPlot() {
   
@@ -108,20 +108,22 @@ if (scatterSvg.empty()) {
 } else {
   scatterSvg.select("g").selectAll("*").remove(); 
 }
-
+const xExtent = d3.extent(cc_data.concat(loyalty_data), function(d) { return d.timestamp; });
+const xPadding = (xExtent[1] - xExtent[0]) * 0.05; 
+const xDomainPadded = [new Date(+xExtent[0] - xPadding), new Date(+xExtent[1] + xPadding)];
 
 const x = d3.scaleTime()
-.domain(d3.extent(cc_data.concat(loyalty_data), function(d) { return d.timestamp; }))
-.range([0, scatterWidth]);
+        .domain(xDomainPadded)
+        .range([0, scatterWidth]);
 scatterSvg.append("g")
-.attr("transform", "translate(0," + scatterHeight + ")")
-.call(d3.axisBottom(x));
+        .attr("transform", "translate(0," + scatterHeight + ")")
+        .call(d3.axisBottom(x));
 
 const y = d3.scaleLinear()
-.domain([0, d3.max(cc_data.concat(loyalty_data), function(d) { return +d.price; })])
-.range([scatterHeight, 0]);
+        .domain([0, d3.max(cc_data.concat(loyalty_data), function(d) { return +d.price; })])
+        .range([scatterHeight, 0]);
 scatterSvg.append("g")
-.call(d3.axisLeft(y));
+        .call(d3.axisLeft(y));
 
 
 const tooltip = d3.select("body").append("div")
@@ -211,7 +213,7 @@ function mouseout() {
       .attr('class', 'legend')
       .attr('transform', 'translate(' + (scatterWidth - 100) + ',30)'); // Adjust legend position
 
-    // Add legend for credit card data
+    
     legend.append('circle')
       .attr('cx', 0)
       .attr('cy', 0)
