@@ -77,7 +77,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 ///////////////////////////////////////////////////////
-<<<<<<< HEAD
 function normalizeLocationName(name) {
     return name.toLowerCase()
                .replace(/[’'´`]/g, "'") 
@@ -86,6 +85,184 @@ function normalizeLocationName(name) {
                .replace(/�/, "e")
                .normalize("NFD").replace(/[\u0300-\u036f]/g, ""); 
 }
+function drawScatterPlot() {
+  
+    const scatterMargin = {top: 30, right: 30, bottom: 50, left: 60},
+    scatterWidth = 800 - scatterMargin.left - scatterMargin.right,
+    scatterHeight = 750 - scatterMargin.top - scatterMargin.bottom;
+
+let scatterSvg = d3.select("body").select("svg.scatterPlot");
+
+if (scatterSvg.empty()) {
+  scatterSvg = d3.select("body")
+      .append("svg")
+      .classed("scatterPlot", true)
+      .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
+      .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
+      scatterSvg.append("rect")
+      .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
+      .attr("height", scatterHeight + scatterMargin.left + scatterMargin.right)
+      .attr("fill", "white");
+      scatterSvg = scatterSvg.append("g")
+      .attr("transform", "translate(" + scatterMargin.left + "," + scatterMargin.top + ")");
+} else {
+  scatterSvg.select("g").selectAll("*").remove(); 
+}
+
+
+const x = d3.scaleTime()
+.domain(d3.extent(cc_data.concat(loyalty_data), function(d) { return d.timestamp; }))
+.range([0, scatterWidth]);
+scatterSvg.append("g")
+.attr("transform", "translate(0," + scatterHeight + ")")
+.call(d3.axisBottom(x));
+
+const y = d3.scaleLinear()
+.domain([0, d3.max(cc_data.concat(loyalty_data), function(d) { return +d.price; })])
+.range([scatterHeight, 0]);
+scatterSvg.append("g")
+.call(d3.axisLeft(y));
+
+
+const tooltip = d3.select("body").append("div")
+  .attr("class", "tooltip")
+  .style("opacity", 0)
+  .style("position", "absolute")
+  .style("background", "rgba(255, 255, 255, 0.8)")
+  .style("border", "solid")
+  .style("border-width", "2px")
+  .style("border-radius", "5px")
+  .style("padding", "5px")
+  .style("pointer-events", "none");
+
+
+scatterSvg.selectAll("dot.cc")
+  .data(cc_data)
+  .enter()
+  .append("circle")
+  .classed("cc", true)
+  .attr("cx", function(d) { return x(d.timestamp); })
+  .attr("cy", function(d) { return y(d.price); })
+  .attr("r", 5)
+  .style("fill", "#69b3a2")
+  .on("mouseover", mouseover)
+  .on("mouseout", mouseout);
+
+
+scatterSvg.selectAll("dot.loyalty")
+  .data(loyalty_data)
+  .enter()
+  .append("circle")
+  .classed("loyalty", true)
+  .attr("cx", function(d) { return x(d.timestamp); })
+  .attr("cy", function(d) { return y(d.price); })
+  .attr("r", 5)
+  .style("fill", "#ff6347")
+  .on("mouseover", mouseover)
+  .on("mouseout", mouseout);
+
+
+function mouseover(event, d) {
+  tooltip.transition()
+      .duration(200)
+      .style("opacity", .9);
+  tooltip.html("Price: " + d.price + "<br/>" +
+               "Location: " + (d.location || "No location data") + "<br/>" +
+               "Timestamp: " + d.timestamp)
+      .style("left", (event.pageX) + "px")
+      .style("top", (event.pageY - 28) + "px");
+}
+
+
+function mouseout() {
+  tooltip.transition()
+      .duration(500)
+      .style("opacity", 0);
+}
+
+  scatterSvg.append("g")
+      .attr("transform", "translate(0," + scatterHeight + ")")
+      .call(d3.axisBottom(x))
+      .append("text")
+      .attr("fill", "#000")
+      .attr("y", 20)
+      .attr("x", scatterWidth / 2)
+      .attr("text-anchor", "middle")
+      .text("Timestamp");
+
+  scatterSvg.append("g")
+      .call(d3.axisLeft(y))
+      .append("text")
+      .attr("fill", "#000")
+      .attr("transform", "rotate(-90)")
+      .attr("y", -40)
+      .attr("x", -scatterHeight / 2)
+      .attr("text-anchor", "middle")
+      .text("Price");
+
+  scatterSvg.append("text")
+      .attr("x", scatterWidth / 2)
+      .attr("y", -10)
+      .attr("text-anchor", "middle")
+      .style("font-size", "16px")
+      .style("text-decoration", "underline")
+      .text("Scatter Plot of Transactions");
+      const legend = scatterSvg.append('g')
+      .attr('class', 'legend')
+      .attr('transform', 'translate(' + (scatterWidth - 100) + ',30)'); // Adjust legend position
+
+    // Add legend for credit card data
+    legend.append('circle')
+      .attr('cx', 0)
+      .attr('cy', 0)
+      .attr('r', 5)
+      .style('fill', '#69b3a2');
+
+    legend.append('text')
+      .attr('x', 10)
+      .attr('y', 5)
+      .text('Credit Card Data')
+      .style('font-size', '12px')
+      .attr('alignment-baseline', 'middle');
+
+   
+    legend.append('circle')
+      .attr('cx', 0)
+      .attr('cy', 20)
+      .attr('r', 5)
+      .style('fill', '#ff6347');
+
+    legend.append('text')
+      .attr('x', 10)
+      .attr('y', 25)
+      .text('Loyalty Card Data')
+      .style('font-size', '12px')
+      .attr('alignment-baseline', 'middle');
+}
+const baseColors = [
+    "#e6194b","#3cb44b","#ffe119","#4363d8", "#f58231","#911eb4","#46f0f0","#f032e6", "#bcf60c","#fabebe", 
+    "#008080","#e6beff", "#9a6324","#fffac8","#800000","#aaffc3","#808000","#ffd8b1","#000075",
+    
+];
+
+
+function generateColorVariations(color, count) {
+    const variations = [color];
+    for (let i = 1; i < count; i++) {
+        const variation = d3.color(color).darker(i * 0.2);
+        variations.push(variation.toString());
+    }
+    return variations;
+}
+
+const distinctColors = baseColors.flatMap(color => generateColorVariations(color, Math.ceil(34 / baseColors.length)));
+
+
+const colorScale = d3.scaleOrdinal()
+    .domain(d3.range(0, 34))
+    .range(distinctColors.slice(0, 34));
+    
+    
 function showPopularLocationsByTime() {
     const combinedData = cc_data.concat(loyalty_data);
     const filteredData = combinedData.filter(d => d.timestamp >= range_start && d.timestamp <= range_end && d.location !== undefined);
@@ -111,20 +288,20 @@ function showPopularLocationsByTime() {
     .sort((a, b) => b[1] - a[1]) 
     .slice(0, 10) //top 10 locations
     .map(d => d[0]); 
-
     
-    highlightTopLocations(topLocations);
-    console.log(topLocations);
-  
     drawAggregatedLineGraph(formattedData);
+    highlightTopLocations(topLocations);
 }
+
+
+
 function highlightTopLocations(locations) {
     d3.selectAll('.location_marker')
         .each(function(d) {
             if(locations.includes(normalizeLocationName(d.name))) {
                 d3.select(this)
                     .attr('r', 10) 
-                    .attr('fill', 'gold');
+                    .attr('fill', colorScale(normalizeLocationName(d.name)));
             } else {
                 d3.select(this)
                     .attr('r', 5) 
@@ -135,7 +312,13 @@ function highlightTopLocations(locations) {
 function drawAggregatedLineGraph(data) {
 
     const container = d3.select("#lineGraphContainer");
+    const totalCountByLocation = Array.from(d3.rollups(
+        data,
+        g => d3.sum(g, d => d.count),
+        d => d.location
+    ));
 
+    totalCountByLocation.sort((a, b) => b[1] - a[1]);
     container.selectAll("svg").remove();
 
     const margin = {top: 20, right: 250, bottom: 30, left: 50},
@@ -143,7 +326,7 @@ function drawAggregatedLineGraph(data) {
         height = 500 - margin.top - margin.bottom;
     const svg = container
         .append("svg")
-        .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+        
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom);
         svg.append("rect")
@@ -166,18 +349,23 @@ function drawAggregatedLineGraph(data) {
         .range([height, 0]);
     graphSvg.append("g")
         .call(d3.axisLeft(y));
-
+    
+    graphSvg.append("text")
+        .attr("transform", "rotate(-90)") 
+        .attr("y", 0 - margin.left) 
+        .attr("x", 0 - (height / 2)) 
+        .attr("dy", "1em") 
+        .style("text-anchor", "middle") 
+        .text("Number of Transactions");
     const sumstat = d3.group(data, d => d.location);
 
-    const color = d3.scaleOrdinal()
-        .domain(Array.from(sumstat.keys()))
-        .range(d3.schemeCategory10);
+    colorScale.domain(Array.from(d3.group(data, d => d.location).keys()));
 
     graphSvg.selectAll(".line")
         .data(sumstat)
         .join("path")
             .attr("fill", "none")
-            .attr("stroke", d => color(d[0]))
+            .attr("stroke", d =>  colorScale(d[0]))
             .attr("stroke-width", 1.5)
             .attr("d", d => {
                 return d3.line()
@@ -186,23 +374,23 @@ function drawAggregatedLineGraph(data) {
                     (d[1])
             });
             const legend = svg.append("g")
-            .attr("transform", `translate(${width + margin.left + 40},${margin.top})`)
-            .selectAll("g")
-            .data(Array.from(sumstat.keys()))
-            .join("g")
-            .attr("transform", (d, i) => `translate(0,${i * 20})`);
-    
-        legend.append("rect")
-            .attr("x", 0)
-            .attr("width", 19)
-            .attr("height", 19)
-            .attr("fill", color);
-    
-        legend.append("text")
-            .attr("x", 24)
-            .attr("y", 9.5)
-            .attr("dy", "0.32em")
-            .text(d => d);
+        .attr("transform", `translate(${width + margin.left + 40},${margin.top})`)
+        .selectAll("g")
+        .data(totalCountByLocation)
+        .join("g")
+        .attr("transform", (d, i) => `translate(0,${i * 20})`);
+
+    legend.append("rect")
+        .attr("x", 0)
+        .attr("width", 19)
+        .attr("height", 19)
+        .attr("fill", d => colorScale(d[0]));
+
+    legend.append("text")
+        .attr("x", 24)
+        .attr("y", 9.5)
+        .attr("dy", "0.32em")
+        .text(d => d[0]);
     }
 
 function getLineGraphData(locationName) {
@@ -250,7 +438,7 @@ function drawLineGraph(svg, locationName) {
     graphSvg.append("g")
         .call(d3.axisLeft(y));
 
-    // Line path
+
     graphSvg.append("path")
         .datum(filteredData)
         .attr("fill", "none")
@@ -261,7 +449,7 @@ function drawLineGraph(svg, locationName) {
             .y(d => y(d.total))
         );
         const tooltip = d3.select(".myTooltip");
-    // Nodes for individual transactions
+  
     graphSvg.selectAll(".transaction-node")
         .data(filteredData)
         .enter()
@@ -272,18 +460,17 @@ function drawLineGraph(svg, locationName) {
             .attr("r", 5)
             .attr("fill", "orange")
             .on("mouseover", (event, d) => {
-                // Show tooltip
+    
                 tooltip.transition().duration(200).style("opacity", 0.9);
                 tooltip.html(`Transaction: $${d.total}<br/>Date: ${d.date}`)
                     .style("left", (event.pageX) + "px")
                     .style("top", (event.pageY - 28) + "px");
             })
             .on("mouseout", () => {
-                // Hide tooltip
+    
                 tooltip.transition().duration(500).style("opacity", 0);
             });
 
-    // Location name at the bottom
     svg.append("text")
         .attr("x", width / 2)
         .attr("y", height + margin.top + 40)
@@ -307,9 +494,6 @@ function drawLineGraphOnClick(locationName) {
 function showTooltip(event, d) {
     
 
-=======
-function showTooltip(event, d) {
->>>>>>> 06a90c5f85423a428d51961d6b7e8a8ccf46ad53
     tooltip
         .style("left", (event.pageX + 10) + "px")
         .style("top", (event.pageY - 10) + "px")
@@ -418,14 +602,9 @@ const size = d3.scaleSqrt().domain(extent).range([1.5, 0.5]);
 const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
 
     map_svg.selectAll('.road_group').remove();
-<<<<<<< HEAD
     
 
     
-=======
-    map_svg.selectAll('.location_markers').remove();
-
->>>>>>> 06a90c5f85423a428d51961d6b7e8a8ccf46ad53
 
     var road_group = map_svg.append('g')
         .attr('class', 'road_group')
@@ -510,19 +689,6 @@ const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
     else if(option === "remove-gps") {
         map_svg.selectAll('.vehicle_group').remove();
     }
-
-    const locationMarkers = map_svg.append('g')
-        .attr('class', 'location_markers')
-        .selectAll('circle')
-        .data(locations)
-        .enter()
-        .append('circle')
-            .attr("transform", d => `translate(${projection([d.x, d.y])})`)
-            .attr('r', 10)
-            .attr('fill', 'red')
-            .attr('opacity', 0.5)
-            .on("mouseenter", (event, d) => showTooltip(event, d))
-            .on("mouseleave", hideTooltip);
 };
 
 // Gets vehicle selected from dropdown and creates subset list of all
@@ -606,7 +772,7 @@ function dataWrangle() {
 
     utcParse = d3.utcParse('%m/%d/%Y')
     temp = loyalty_data.map(d => ({
-        "localtion": d.location,
+        "location": d.location,
         "loyaltynum": +d.loyaltynum,
         "price": +d.price,
         "timestamp": utcParse(d.timestamp).getTime()
