@@ -406,11 +406,33 @@ function drawAggregatedLineGraph(data) {
         }));
     }
 
+    function getLineGraphData(locationName) {
+        const normalizedLocationName = normalizeLocationName(locationName);
+        return cc_data.filter(d => 
+            normalizeLocationName(d.location) === normalizedLocationName &&
+            new Date(d.timestamp) >= range_start && new Date(d.timestamp) <= range_end
+        ).map(d => ({
+            date: new Date(d.timestamp),
+            total: parseFloat(d.price)
+        })).sort((a, b) => a.date - b.date);
+    }
+    
+    function getLoyaltyLineGraphData(locationName) {
+        const normalizedLocationName = normalizeLocationName(locationName);
+        return loyalty_data.filter(d => 
+            normalizeLocationName(d.location) === normalizedLocationName &&
+            new Date(d.timestamp) >= range_start && new Date(d.timestamp) <= range_end
+        ).map(d => ({
+            date: new Date(d.timestamp),
+            total: parseFloat(d.price)
+        })).sort((a, b) => a.date - b.date); 
+    }
 function drawLineGraph(svg, locationName) {
     const filteredData = getLineGraphData(locationName).filter(d => 
         d.date >= range_start && d.date <= range_end
     );
     console.log(filteredData);
+    
     const margin = {top: 20, right: 30, bottom: 50, left: 60},
           width = 600 - margin.left - margin.right,
           height = 400 - margin.top - margin.bottom;
