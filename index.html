@@ -83,10 +83,12 @@
                     <button type="button" class="btn btn-primary" onclick="updateMap('draw-gps');">Plot Path</button>
                     <button type="button" class="btn btn-warning" onclick="updateMap('remove-gps');">Remove Path</button><br/>
                     <button type="button" class="btn btn-primary border-1 p-1 m-1" onclick="showPopularLocationsByTime();">Popular Locations</button>
-
                 </div>
                 <div class="col text-center border border-1 p-1 m-1" id="popular_locations">
                     <button type="button" class="btn btn-primary" onclick="drawScatterPlot();">Transactions Plot</button>
+                </div>
+                <div class="col text-center border border-1 p-1 m-1" id="toggle_density">
+                    <button type="button" class="btn btn-primary" onclick="toggleDensity();">Toggle Heat Map</button>
                 </div>
 
             </div>

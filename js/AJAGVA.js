@@ -112,6 +112,8 @@ document.addEventListener('DOMContentLoaded', function () {
         selectVehicle();
         initZoom();
         updateMap();
+        toggleDensity();
+        
     });
 });
 
@@ -1014,6 +1016,21 @@ const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
     }
 };
 
+function toggleDensity() {
+    const selected_cc_data = []
+    const selected_loyalty_data = []
+
+    // Select data within the time range for cc data
+    cc_data.forEach(d => {
+        if (range_start <= d.timestamp && d.timestamp <= range_end){
+            selected_cc_data.push(d);
+        }
+    });
+
+    console.log("selected_cc_data")
+    console.log(selected_cc_data)
+};
+
 // Gets vehicle selected from dropdown and creates subset list of all
 // GPS coordinates for the vehicle
 function selectVehicle() {
@@ -1282,3 +1299,5 @@ function centerMap() {
         .transition()
         .call(zoom.translateTo, 0.5 * innerWidth, 0.5 * innerHeight);
 }
+
+
