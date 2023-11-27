@@ -170,7 +170,7 @@ function mouseover(event, d) {
       .style("opacity", .9);
   tooltip.html("Price: " + d.price + "<br/>" +
                "Location: " + (d.location || "No location data") + "<br/>" +
-               "Timestamp: " + d.timestamp)
+               "Timestamp: " + formatter(d.timestamp))
       .style("left", (event.pageX) + "px")
       .style("top", (event.pageY - 28) + "px");
 }
@@ -395,24 +395,22 @@ function drawAggregatedLineGraph(data) {
         .text(d => d[0]);
     }
 
-function getLineGraphData(locationName) {
-    const normalizedLocationName = normalizeLocationName(locationName);
-    const filteredData = cc_data.filter(d => normalizeLocationName(d.location) === normalizedLocationName);
-    const dataAggregated = d3.rollups(
-        filteredData,
-        v => d3.sum(v, leaf => parseFloat(leaf.price)), 
-        d => new Date(parseInt(d.timestamp)).setHours(0, 0, 0, 0) 
-    );
-    const dataArray = Array.from(dataAggregated, ([date, total]) => ({ date, total }));
-
-    return dataArray;
-}
+    function getLineGraphData(locationName) {
+        const normalizedLocationName = normalizeLocationName(locationName);
+        return cc_data.filter(d => 
+            normalizeLocationName(d.location) === normalizedLocationName &&
+            new Date(d.timestamp) >= range_start && new Date(d.timestamp) <= range_end
+        ).map(d => ({
+            date: new Date(d.timestamp),
+            total: parseFloat(d.price)
+        }));
+    }
 
 function drawLineGraph(svg, locationName) {
     const filteredData = getLineGraphData(locationName).filter(d => 
         d.date >= range_start && d.date <= range_end
     );
-
+    console.log(filteredData);
     const margin = {top: 20, right: 30, bottom: 50, left: 60},
           width = 600 - margin.left - margin.right,
           height = 400 - margin.top - margin.bottom;
@@ -440,38 +438,49 @@ function drawLineGraph(svg, locationName) {
     graphSvg.append("g")
         .call(d3.axisLeft(y));
 
+    const line = d3.line()
+        .x(d => x(d.date))
+        .y(d => y(d.total))
+        
 
     graphSvg.append("path")
         .datum(filteredData)
         .attr("fill", "none")
         .attr("stroke", "steelblue")
-        .attr("stroke-width", 1.5)
-        .attr("d", d3.line()
-            .x(d => x(d.date))
-            .y(d => y(d.total))
-        );
-        const tooltip = d3.select(".myTooltip");
-  
-    graphSvg.selectAll(".transaction-node")
+        .attr("stroke-width", 2)
+        .attr("d", line)
+
+    graphSvg.selectAll(".dot")
         .data(filteredData)
-        .enter()
-        .append("circle")
-            .attr("class", "transaction-node")
-            .attr("cx", d => x(d.date))
-            .attr("cy", d => y(d.total))
-            .attr("r", 5)
-            .attr("fill", "orange")
-            .on("mouseover", (event, d) => {
+        .enter().append("circle")
+        .attr("class", "dot")
+        .attr("cx", d => x(d.date))
+        .attr("cy", d => y(d.total))
+        .attr("r", 5)
+        .on("mouseover", mouseover)
+        .on("mouseout", mouseout);
+
     
-                tooltip.transition().duration(200).style("opacity", 0.9);
-                tooltip.html(`Transaction: $${d.total}<br/>Date: ${d.date}`)
-                    .style("left", (event.pageX) + "px")
-                    .style("top", (event.pageY - 28) + "px");
-            })
-            .on("mouseout", () => {
-    
-                tooltip.transition().duration(500).style("opacity", 0);
-            });
+    var tooltip = d3.select("body").append("div") 
+        .attr("class", "tooltip")       
+        .style("opacity", 0);
+
+    function mouseover(event, d) {
+        tooltip.transition()
+            .duration(200)
+            .style("opacity", .9);
+        tooltip.html("Price: " + d.price + "<br/>" +
+                     "Timestamp: " + d3.timeFormat("%Y-%m-%d %H:%M:%S")(d.date))
+            .style("left", (event.pageX) + "px")
+            .style("top", (event.pageY - 28) + "px");
+    }
+
+    function mouseout() {
+        tooltip.transition()
+            .duration(500)
+            .style("opacity", 0);
+    }
+          
 
     svg.append("text")
         .attr("x", width / 2)
@@ -480,6 +489,7 @@ function drawLineGraph(svg, locationName) {
         .style("font-size", "16px")
         .text(locationName);
 }
+
         
 
 function drawLineGraphOnClick(locationName) {
@@ -495,8 +505,9 @@ function drawLineGraphOnClick(locationName) {
 }
 function showTooltip(event, d) {
     
-
+    
     tooltip
+        .text(d.name)
         .style("left", (event.pageX + 10) + "px")
         .style("top", (event.pageY - 10) + "px")
         .style("display", "initial");
