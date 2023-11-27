@@ -13,6 +13,43 @@ var map_svg, road_group;
 // console.log(converted) --> "01/06/2014 00:00:00"
 const formatter = d3.utcFormat("%a %m/%d/%Y %H:%M:%S");
 
+const locationcoords = [
+    { id: '1', name: "Brew've Been Served", x: 24.90451613035714, y: 36.055798181421736 },
+    { id: '2', name: "Hallowed Grounds", x: 24.888689679563488, y: 36.06379452649173 },
+    { id: '3', name: "Coffee Cameleon", x: 24.890190463690473, y:  36.05557758107501 },
+    { id: '4', name: "Abila Airport", x: 24.824761392063486, y: 36.049565983623026 },
+    { id: '5', name: "Kronos Pipe and Irrigation", x: 0, y: 0 },
+    { id: '6', name: "Nationwide Refinery", x: 24.886097416071422,  y: 36.05723206860303 },
+    { id: '7', name: "Maximum Iron and Steel", x: 24.839709543055555, y: 36.06296735606426 },
+    { id: '8', name: "Stewart and Sons Fabrication", x: 0, y: 0 },
+    { id: '9', name: "Carlyle Chemical Inc.", x: 24.88411910972222, y: 36.06048579260418 },
+    { id: '10', name: "Coffee Shack", x: 24.858128257341267, y:  36.07493290777385},
+    { id: '11', name: "Bean There Done That", x: 24.85028324940476, y: 36.08259652136187 },
+    { id: '12', name: "Brewed Awakenings", x: 0, y: 0 },
+    { id: '13', name: "Jack's Magical Beans", x: 24.873477185912694, y: 36.06704797913108 },
+    { id: '14', name: "Katerina’s Café", x: 24.900695952579362, y:  36.05508122803398 },
+    { id: '15', name: "Hippokampos", x: 0, y: 0 },
+    { id: '16', name: "Abila Zacharo", x: 0, y: 0 },
+    { id: '17', name: "Gelatogalore", x: 24.862971697023806,  y: 36.06103725791459 },
+    { id: '18', name: "Kalami Kafenion", x: 0, y: 0 },
+    { id: '19', name: "Ouzeri Elian", x: 24.87409114305555,  y: 36.0527097202977 },
+    { id: '20', name: "Guy's Gyros", x: 24.901378127182536,  y: 36.05800415087927 },
+    { id: '21', name: "U-Pump", x: 24.86931592083333,  y: 36.06815081389762 },
+    { id: '22', name: "Frydos Autosupply n' More", x: 24.90478900019841, y:  36.05805929932343 },
+    { id: '23', name: "Albert's Fine Clothing", x: 24.855945298611108,  y: 36.07559454415879, },
+    { id: '24', name: "Shoppers' Delight", x: 0, y: 0 },
+    { id: '25', name: "Abila Scrapyard", x: 24.846121984325393,  y: 36.075373999315616 },
+    { id: '26', name: "Frank's Fuel", x: 24.84182428432539 ,y: 36.07476749780786 },
+    { id: '27', name: "Chostus Hotel", x: 24.895511425595235,  y: 36.0682610965239 },
+    { id: '28', name: "General Grocer", x: 24.85881043194444,  y: 36.061423281332196 },
+    { id: '29', name: "Kronos Mart", x: 24.849123552579364,  y: 36.0667722680237 },
+    { id: '30', name: "Octavio's Office Supplies", x: 0, y: 0 },
+    { id: '31', name: "Roberts and Sons", x: 24.85342125257936,  y: 36.0644011126115 },
+    { id: '32', name: "Ahaggo Museum", x: 24.87675162400793,  y: 36.07614590356074 },
+    { id: '33', name: "Desafio Golf Course", x: 24.859219736706347,  y: 36.088550468088755 },
+    { id: '34', name: "Daily Dealz", x: 0, y: 0 }
+];
+
 document.addEventListener('DOMContentLoaded', function () {
     const import_files = [
         d3.csv('./data/gps.csv'), 
@@ -29,6 +66,9 @@ document.addEventListener('DOMContentLoaded', function () {
         cc_data = values[2];
         loyalty_data = values[3];
         abila = values[4];
+
+        gpsdata=gps_data
+        carass = car_assignments
 
         dataWrangle();
 
@@ -77,6 +117,254 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 ///////////////////////////////////////////////////////
+//HeartBeat Graph
+function cleandatahbg() {
+    carass.forEach(function(entry) {
+        entry.FullName = entry.FirstName + ' ' + entry.LastName;
+    });
+    carass.forEach(function(entry) {
+    delete entry.FirstName;
+    delete entry.LastName;
+    });
+    gpsdata.forEach(entry => {
+        //console.log(entry.Timestamp)
+        entry.Timestamp = new Date(entry.Timestamp);
+        });
+    // Function to convert hour to time categories
+    function hourConverter(x) {
+    if (x >= 3 && x <= 11) {
+        return 'Morning';
+    } else if (x >= 11 && x <= 16) {
+        return 'Lunch';
+    } else if (x >= 16 && x <= 20) {
+        return 'Evening';
+    } else if (x > 20 && x <= 24) {
+        return 'Night';
+    } else if (x >= 0 && x <= 3) {
+        return 'MidNight';
+    } else if (x > 3 && x < 6) {
+        return 'Early Morning';
+    }
+    }
+    // Manipulate timestamp
+    gpsdata.forEach(entry => {
+    entry.hour = entry.Timestamp.getHours();
+    entry.time = hourConverter(entry.hour);
+    entry.date = entry.Timestamp.toISOString().split('T')[0]; // Extract date in YYYY-MM-DD format
+    entry.is_weekend = entry.Timestamp.getDay() > 4;
+    });
+    // Merging datasets
+    const mergedData = gpsdata.map(entry => {
+    const carAssignment = carass.find(assign => assign.CarID === entry.id);
+    return { ...entry, ...carAssignment };
+    });
+    // Taking out entries where Timestamp is not available
+    const filteredData = mergedData.filter(entry => entry.Timestamp);
+    // Dropping the 'CarID' property
+    //filteredData.forEach(entry => delete entry.CarID);
+    gpsdata.forEach(entry => {
+        if (!entry.CurrentEmploymentType) {
+            entry.CurrentEmploymentType = 'Facilities';
+        }
+        if (!entry.CurrentEmploymentTitle) {
+            entry.CurrentEmploymentTitle = 'Truck Driver';
+        }
+        });
+    const idList = [...new Set(filteredData.map(entry => entry.id))].sort();
+    // Making stops
+    let gpsFull = [];
+    let dataStops = [];
+    for (const id of idList) {
+    const data = filteredData.filter(entry => entry.id === id).sort((a, b) => a.Timestamp - b.Timestamp);
+    const stopList = [];
+    for (let i = 0; i < data.length - 1; i++) {
+        const point = data[i].Timestamp;
+        const nextPoint = data[i + 1].Timestamp;
+        if (nextPoint - point > 30 * 60 * 1000) { // 30 minutes in milliseconds
+        stopList.push(1);
+        } else {
+        stopList.push(0);
+        }
+    }
+    stopList.push(0);
+    data.forEach((entry, index) => {
+        entry.stop = stopList[index];
+    });
+    // Calculate and add stop time to dataStops
+    const stopsWithData = data.filter(entry => entry.stop === 1);
+    stopsWithData.forEach((entry, index, array) => {
+        if (index < array.length - 1) {
+        const stopTime = array[index + 1].Timestamp - entry.Timestamp;
+        entry.stopTime = stopTime/60000;
+        }
+    });
+    if (id === 101) {
+        gpsFull = [...data];
+        dataStops = data.filter(entry => entry.stop === 1);
+    } else {
+        const gpsF = [...data];
+        gpsFull = [...gpsFull, ...gpsF];
+        const dataS = data.filter(entry => entry.stop === 1);
+        dataStops = [...dataStops, ...dataS];
+    }
+    }
+    //console.log(dataStops)
+    const threshold = 2
+    const stopLoc = []
+    dataStops.forEach(stopItem => {
+        let closestDistance = Number.MAX_VALUE;
+        let closestItem = null;
+        locationcoords.forEach(locItem => {
+            const distance = calculateDistance(parseFloat(stopItem.lat), parseFloat(stopItem.long), locItem.y, locItem.x)
+            if (distance <= threshold && distance < closestDistance) {
+                closestDistance = distance;
+                closestItem = { stopItem, locItem, distance };
+                }
+            });
+
+            if (closestItem) {
+                stopLoc.push(closestItem);
+            }
+    });
+    //console.log(stopLoc)
+    const filteredStops = stopLoc.filter(entry => entry.distance <= 0.5)
+    //console.log(filteredStops)
+    const finData = filteredStops.map(item => {
+        return{
+            id: item.stopItem.id,
+            loc: item.locItem.name,
+            name: item.stopItem.FullName,
+            time: item.stopItem.stopTime,
+            date: item.stopItem.date,
+            hour: item.stopItem.hour
+        };
+    });
+    //console.log(finData)
+    return finData
+}
+function filterhbgdata(hbgdata, id, date) {
+    const filt_hbdata = hbgdata.filter(entry => (entry.id === id.toString() && entry.date === date.toString()));
+    //console.log(filt_hbdata)
+    return filt_hbdata
+}
+function getDetails(filhbd) {
+    const det = filhbd.map(item => ({
+        Shop_Name: item.loc,
+        Time_Visited: `${item.hour}00 hrs`,
+        Time_Spent: `${parseInt(item.time)} minutes`
+    }))
+    //console.log(det)
+    return det
+}
+function plotHeartBeat() {
+
+    d3.select("#hbg_div svg").remove();
+
+    const hbdata = cleandatahbg();
+    //console.log(hbdata)
+    const svg = d3.select("#hbg_div")
+			.append("svg")
+			.attr("width", width-100)
+			.attr("height", height-200);
+
+
+    const vehicle_id = d3.select("#select-vehicle").node().value;
+    const sel_date = d3.select("#dateSelector").node().value;
+    //console.log(vehicle_id, sel_date)
+    const filhbd = filterhbgdata(hbdata, vehicle_id, sel_date);
+    // Extract hours from your data
+    const hours = filhbd.map(entry => parseInt(entry.hour));
+    //console.log(hours)
+    // Create an array with x-axis values from 0 to 24
+    const xAxisValues = Array.from({ length: 25 }, (_, i) => i);
+    // Create an array indicating whether the hour exists in the data
+    const spikes = xAxisValues.map(value => hours.includes(value) ? 20 : 5);
+    //console.log(spikes)
+    // Create scales for x and y axes
+    const xScale = d3.scaleLinear()
+        .domain([0, 24])
+        .range([0, width-250]);
+
+    const yScale = d3.scaleLinear()
+        .domain([0, 25])  // Adjusted y-axis range to accommodate spikes
+        .range([height-500, 0]);
+
+    // Create the line function
+    const line = d3.line()
+                    .x((d, i) => xScale(i))
+                    .y(d => yScale(d))
+                    .curve(d3.curveStepAfter)
+                    .curve(d3.curveCardinal.tension(0.5));
+
+    svg.append("g")
+        .attr("transform", `translate(50, 450)`)
+        .call(d3.axisBottom(xScale));
+
+    svg.append("text")
+        .attr("class", "x label")
+        .attr("text-anchor", "end")
+        .attr("x", width-750)
+        .attr("y", height-510)
+        .text("Time of Day");
+        
+    // Append the new path element to the SVG container
+    svg.append("path")
+        .datum(spikes)
+        .attr("d", line)
+        .attr("fill", "none")
+        .attr("stroke", "red")
+        .attr("Stroke-width", 20)
+        .attr("transform", `translate(50, 0)`)
+        .attr("stroke-linejoin", "round") // Round line joins for a smoother appearance
+        .attr("stroke-linecap", "round");
+
+    svg.selectAll("image")
+            .data(spikes)
+            .enter()
+            .append("image")
+            .attr("x", (d, i) => xScale(i)+40) // Adjust the x position of the heart image
+            .attr("y", (d, i) => yScale(d) - 25) // Adjust the y position of the heart image
+            .attr("width", 20)
+            .attr("height", 20)
+            .attr("xlink:href", "data/heart.svg");
+
+
+    const detailsGroup = svg.append("g")
+                            .attr("transform", "translate(50, 0)");
+
+    
+    // Add a text element to display details in the top right corner
+    const detailsText = detailsGroup.append("text")
+        .attr("x", width - 450)
+        .attr("y", 10)
+        .attr("text-anchor", "start")
+        .attr("font-size", 12)
+        .attr("fill", "black")
+        .attr("font-family", '"Open Sans", sans-serif');
+    
+    // Update details text based on hbdata
+    function updateDetails(filt_hbdata) {
+        //const vehicle_id = d3.select("#select-vehicle").node().value;
+        //const sel_date = d3.select("#dateSelector").node().value;
+        const details = getDetails(filhbd)
+        detailsText.text(null);
+        details.forEach((item, index) => {
+            detailsText.append("tspan")
+                .text(`${item.Shop_Name}: Visited at ${item.Time_Visited}, (spent ${item.Time_Spent})`)
+                .attr("x", 10)
+                .attr("dy", index > 0 ? 15 : 0); // Add vertical spacing for each line
+        });
+    }
+    
+    // Initial call to set the initial details
+    updateDetails(filhbd);
+		
+}
+
+
+
+
+/////////////////////////////////////////////////////
 function normalizeLocationName(name) {
     return name.toLowerCase()
                .replace(/[’'´`]/g, "'") 
