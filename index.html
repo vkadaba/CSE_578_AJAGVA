@@ -85,7 +85,7 @@
                     <button type="button" class="btn btn-primary border-1 p-1 m-1" onclick="showPopularLocationsByTime();">Popular Locations</button>
 
                 </div>
-                <div class="col text-center border border-1 p-1 m-1" id="popular_locations">
+                <div class="col text-center border border-1 p-1 m-1">
                     <button type="button" class="btn btn-primary" onclick="drawScatterPlot();">Transactions Plot</button>
                 </div>
 
@@ -106,31 +106,39 @@
                             <button type="button" class="btn btn-secondary" onclick="centerMap();">Center Map</button>
                         </div>
                     </div>
-                    <div id="lineGraphContainer"></div>
-                    <div id="hbg_div" class="border border-dark rounded bg-light shadow-sm">
-                        <div class="col text-center p-1 m-1">
-                            <h5>HeartBeat Graph</h5>
-    
-                                <label for="dateSelector">Select Car ID/Employee from control panel and select Date:</label>
-                                <select id="dateSelector">
-                                    <option value="2014-01-06">01/06/2014</option>
-                                    <option value="2014-01-07">01/07/2014</option>
-                                    <option value="2014-01-08">01/08/2014</option>
-                                    <option value="2014-01-09">01/09/2014</option>
-                                    <option value="2014-01-10">01/10/2014</option>
-                                    <option value="2014-01-11">01/11/2014</option>
-                                    <option value="2014-01-12">01/12/2014</option>
-                                    <option value="2014-01-13">01/13/2014</option>
-                                    <option value="2014-01-14">01/14/2014</option>
-                                    <option value="2014-01-15">01/15/2014</option>
-                                    <option value="2014-01-16">01/16/2014</option>
-                                    <option value="2014-01-17">01/17/2014</option>
-                                    <option value="2014-01-18">01/18/2014</option>
-                                    <option value="2014-01-19">01/19/2014</option>
-                                    <option value="2014-01-20">01/20/2014</option>
-                                </select>
-    
-                            <button type="button" class="btn btn-secondary" onclick="plotHeartBeat();">Plot HB Graph</button>
+                    <div class="row justify-content-center">
+                        <div class="col mt-2 text-center" id="lineGraphContainer">
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div id="hbg_div" class="border border-dark rounded bg-light shadow-sm">
+                            <div class="col text-center p-1 m-1">
+                                <h5>HeartBeat Graph</h5>
+                                    <label for="dateSelector">Select Car ID/Employee from control panel and select Date:</label>
+                                    <select id="dateSelector">
+                                        <option value="2014-01-06">01/06/2014</option>
+                                        <option value="2014-01-07">01/07/2014</option>
+                                        <option value="2014-01-08">01/08/2014</option>
+                                        <option value="2014-01-09">01/09/2014</option>
+                                        <option value="2014-01-10">01/10/2014</option>
+                                        <option value="2014-01-11">01/11/2014</option>
+                                        <option value="2014-01-12">01/12/2014</option>
+                                        <option value="2014-01-13">01/13/2014</option>
+                                        <option value="2014-01-14">01/14/2014</option>
+                                        <option value="2014-01-15">01/15/2014</option>
+                                        <option value="2014-01-16">01/16/2014</option>
+                                        <option value="2014-01-17">01/17/2014</option>
+                                        <option value="2014-01-18">01/18/2014</option>
+                                        <option value="2014-01-19">01/19/2014</option>
+                                        <option value="2014-01-20">01/20/2014</option>
+                                    </select>
+                                <button type="button" class="btn btn-secondary" onclick="plotHeartBeat();">Plot HB Graph</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row justify-content-center">
+                        <div class="col mt-2 text-center">
+                            <svg id="scatter_svg"></svg>
                         </div>
                     </div>
                 </div>

@@ -382,11 +382,7 @@ function drawScatterPlot() {
     scatterWidth = 800 - scatterMargin.left - scatterMargin.right,
     scatterHeight = 750 - scatterMargin.top - scatterMargin.bottom;
 
-let scatterSvg = d3.select("body").select("svg.scatterPlot");
-
-if (scatterSvg.empty()) {
-  scatterSvg = d3.select("body")
-      .append("svg")
+    var scatterSvg = d3.select("#scatter_svg")
       .classed("scatterPlot", true)
       .attr("width", scatterWidth + scatterMargin.left + scatterMargin.right)
       .attr("height", scatterHeight + scatterMargin.top + scatterMargin.bottom)
@@ -396,9 +392,7 @@ if (scatterSvg.empty()) {
       .attr("fill", "white");
       scatterSvg = scatterSvg.append("g")
       .attr("transform", "translate(" + scatterMargin.left + "," + scatterMargin.top + ")");
-} else {
-  scatterSvg.select("g").selectAll("*").remove(); 
-}
+
 const xExtent = d3.extent(cc_data.concat(loyalty_data), function(d) { return d.timestamp; });
 const xPadding = (xExtent[1] - xExtent[0]) * 0.05; 
 const xDomainPadded = [new Date(+xExtent[0] - xPadding), new Date(+xExtent[1] + xPadding)];
