@@ -47,7 +47,8 @@ const locationcoords = [
     { id: '31', name: "Roberts and Sons", x: 24.85342125257936,  y: 36.0644011126115 },
     { id: '32', name: "Ahaggo Museum", x: 24.87675162400793,  y: 36.07614590356074 },
     { id: '33', name: "Desafio Golf Course", x: 24.859219736706347,  y: 36.088550468088755 },
-    { id: '34', name: "Daily Dealz", x: 0, y: 0 }
+    { id: '34', name: "Daily Dealz", x: 0, y: 0 },
+    { id: '35', name: "GAStech", x: 24.87675162400793,  y:  36.049565983623026},
 ];
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -82,14 +83,14 @@ document.addEventListener('DOMContentLoaded', function () {
         console.log(loyalty_data);
         console.log('Abila.geojson loaded')
 
-        // Create hidden tooltip div
+      
         tooltip = d3.select("body").append("div")
             .attr("class", "myTooltip")
             .style("display", "none");
 
         projection = d3.geoMercator().fitSize([innerWidth, innerHeight], abila);
         map_path = d3.geoPath().projection(projection);
-
+        
         map_svg = d3.select('#map_svg')
             .attr('class', 'map_svg')
             .attr('width', width)
@@ -97,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const locationMarkers = map_svg.append('g')
             .attr('class', 'location_markers')
             .selectAll('circle')
-            .data(locations)
+            .data(locationcoords)
             .enter()
             .append('circle')
                 .attr('class', 'location_marker')
@@ -109,6 +110,8 @@ document.addEventListener('DOMContentLoaded', function () {
         locationMarkers.on("click", (event, d) => {
                     drawLineGraphOnClick(d.name);
                 });
+                console.log("Number of locations:", locations.length);
+        console.log("Locations processed:", map_svg.selectAll('circle').size());
         selectVehicle();
         initZoom();
         updateMap();
@@ -790,7 +793,13 @@ function drawLineGraph(svg, locationName) {
             .duration(500)
             .style("opacity", 0);
     }
-          
+    svg.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("y", 0 + margin.left)
+    .attr("x", 0 - (height / 2)) 
+    .attr("dy", "-3em") 
+    .style("text-anchor", "middle") 
+    .text("CC Transactions");   
 
     svg.append("text")
         .attr("x", width / 2)
