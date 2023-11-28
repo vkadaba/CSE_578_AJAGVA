@@ -799,7 +799,7 @@ function drawLineGraph(svg, locationName) {
     .attr("x", 0 - (height / 2)) 
     .attr("dy", "-3em") 
     .style("text-anchor", "middle") 
-    .text("CC Transactions");   
+    .text("CC Transactions (Amount)");   
 
     svg.append("text")
         .attr("x", width / 2)
