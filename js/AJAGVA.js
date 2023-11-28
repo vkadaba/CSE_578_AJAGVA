@@ -112,7 +112,6 @@ document.addEventListener('DOMContentLoaded', function () {
         selectVehicle();
         initZoom();
         updateMap();
-        toggleDensity();
         
     });
 });
@@ -1017,19 +1016,129 @@ const opacity = d3.scaleLinear().domain(extent).range([.35, 1]);
 };
 
 function toggleDensity() {
-    const selected_cc_data = []
-    const selected_loyalty_data = []
+
+    // Remove existing heatmap content
+    d3.select('.heatmap_container').remove();
+
+    const selected_cc_data = [];
+    const selected_loyalty_data = [];
 
     // Select data within the time range for cc data
     cc_data.forEach(d => {
-        if (range_start <= d.timestamp && d.timestamp <= range_end){
+        if (range_start <= d.timestamp && d.timestamp <= range_end) {
             selected_cc_data.push(d);
         }
     });
 
-    console.log("selected_cc_data")
-    console.log(selected_cc_data)
-};
+    console.log("selected_cc_data");
+    console.log(selected_cc_data);
+
+    // Select data within the time range for loyalty data
+    loyalty_data.forEach(d => {
+        if (range_start <= d.timestamp && d.timestamp <= range_end) {
+            selected_loyalty_data.push(d);
+        }
+    });
+
+    console.log("selected_loyalty_data");
+    console.log(selected_loyalty_data);
+
+    const heatmapContainer = map_svg.append('g')
+        .attr('class', 'heatmap_container');
+
+    // Create a function to get the count of points for a location
+    const getCountForLocation = (data, location) => data.filter(d => d.location === location).length;
+
+    const tooltip = d3.select('body')
+    .append('div')
+    .attr('class', 'tooltip')
+    .style('position', 'absolute')
+    .style('background', '#fff')
+    .style('border', '1px solid #000')
+    .style('padding', '10px')
+    .style('opacity', 0);
+
+    // Create circles for credit card data (red)
+    const ccHeatmap = heatmapContainer.selectAll('circle.cc')
+        .data(selected_cc_data)
+        .enter()
+        .append('circle')
+        .attr('class', 'cc location_marker')
+        .attr("transform", d => `translate(${projection([getXCoordinate(d.location), getYCoordinate(d.location)])})`)
+        .attr('r', d => getCountForLocation(selected_cc_data, d.location) * 1.25) 
+        .style('fill', "rgba(255, 0, 0, 0.1)")
+        .on('mouseover', function (event, d) {
+            // Show tooltip on mouseover
+            tooltip.transition()
+                .duration(200)
+                .style('opacity', 0.9);
+            tooltip.html(`<strong>Location:</strong> ${d.location}`)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 18) + 'px');
+        })
+        .on('mousemove', function (event) {
+            // Move tooltip with the mouse
+            tooltip.style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 18) + 'px');
+        })
+        .on('mouseout', function () {
+            // Hide tooltip on mouseout
+            tooltip.transition()
+                .duration(500)
+                .style('opacity', 0);
+        });
+
+
+    // Create circles for loyalty data (blue)
+    const loyaltyHeatmap = heatmapContainer.selectAll('circle.loyalty')
+        .data(selected_loyalty_data)
+        .enter()
+        .append('circle')
+        .attr('class', 'loyalty location_marker') 
+        .attr("transform", d => `translate(${projection([getXCoordinate(d.location), getYCoordinate(d.location)])})`)
+        .attr('r', d => getCountForLocation(selected_loyalty_data, d.location) * 1.25) 
+        .style('fill', "rgba(0, 0, 255, 0.1)")
+        .on('mouseover', function (event, d) {
+            // Show tooltip on mouseover
+            tooltip.transition()
+                .duration(200)
+                .style('opacity', 0.9);
+            tooltip.html(`<strong>Location:</strong> ${d.location}`)
+                .style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 18) + 'px');
+        })
+        .on('mousemove', function (event) {
+            // Move tooltip with the mouse
+            tooltip.style('left', (event.pageX + 10) + 'px')
+                .style('top', (event.pageY - 18) + 'px');
+        })
+        .on('mouseout', function () {
+            // Hide tooltip on mouseout
+            tooltip.transition()
+                .duration(500)
+                .style('opacity', 0);
+        });
+
+
+}
+
+
+
+function getCountForLocation(data, location) {
+    return data.reduce((count, d) => {
+        return d.location === location ? count + 1 : count;
+    }, 0);
+}
+
+function getXCoordinate(location) {
+    const coords = locationcoords.find(coord => coord.name === location);
+    return coords ? coords.x : 0;
+}
+
+function getYCoordinate(location) {
+    const coords = locationcoords.find(coord => coord.name === location);
+    return coords ? coords.y : 0;
+}
 
 // Gets vehicle selected from dropdown and creates subset list of all
 // GPS coordinates for the vehicle
